@@ -80,7 +80,9 @@ export function PlaybackControls() {
     <div className="space-y-4">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Playback
+        
       </h3>
+      
 
       {!hasSteps && (
         <>
@@ -104,6 +106,7 @@ export function PlaybackControls() {
       {hasSteps && (
         <>
           <div className="flex items-center justify-center gap-2">
+            
             <Button variant="outline" size="icon" onClick={() => dispatch(stepBackward())} disabled={currentStepIndex <= -1}>
               <SkipBack className="w-4 h-4" />
             </Button>
@@ -126,11 +129,12 @@ export function PlaybackControls() {
             <Button variant="ghost" size="icon" onClick={() => dispatch(resetPlayback())}>
               <RotateCcw className="w-4 h-4" />
             </Button>
+            <div className="text-center text-xs text-zinc-500">
+              Step {currentStepIndex + 1} / {steps.length}
+            </div>
           </div>
 
-          <div className="text-center text-xs text-zinc-500">
-            Step {currentStepIndex + 1} / {steps.length}
-          </div>
+
 
           {currentStep && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">

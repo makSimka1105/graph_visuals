@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -11,6 +12,8 @@ import {
   RotateCcw,
   Rocket,
   CircleOff,
+  BarChart3,
+  PersonStandingIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -63,9 +66,16 @@ export function Sidebar() {
     else dispatch(play());
   };
 
+  useEffect(() => {
+    const update = () => setExpanded(window.innerWidth >= 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   if (!expanded) {
     return (
-      <div className="h-[100dvh] min-h-screen max-h-[100dvh] w-14 bg-zinc-950 border-r border-zinc-800 flex flex-col items-center py-4 gap-3 shrink-0">
+      <div className="fixed md:static bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-[calc(0.75rem+env(safe-area-inset-right))] left-auto md:left-auto z-[60] md:z-auto bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl md:rounded-none md:border-0 md:border-r md:border-zinc-800 flex flex-row md:flex-col items-center py-2 md:py-4 px-3 md:px-0 gap-3 shrink-0 md:h-[100dvh] md:min-h-screen md:max-h-[100dvh] md:w-14 shadow-lg md:shadow-none pointer-events-auto">
         <Button
           variant="ghost" size="icon"
           onClick={() => setExpanded(true)}
@@ -73,7 +83,8 @@ export function Sidebar() {
         >
           <PanelLeftOpen className="w-5 h-5" />
         </Button>
-        <Separator className="bg-zinc-800 w-8" />
+        <span className="text-[11px] text-zinc-500 md:hidden select-none">Menu</span>
+        <Separator className="bg-zinc-800 w-8 hidden md:block" />
 
         {!hasSteps && canRun && (
           <Button variant="ghost" size="icon" onClick={handleRun} title="Run Algorithm"
@@ -132,15 +143,29 @@ export function Sidebar() {
   }
 
   return (
-    <div className="h-[100dvh] min-h-screen max-h-[100dvh] w-[360px] bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
+    <div className="fixed md:static inset-0 md:inset-auto z-40 md:z-auto bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col shrink-0 overflow-hidden w-full md:w-[360px] h-[100dvh] md:h-[100dvh] md:min-h-screen md:max-h-[100dvh] overscroll-contain">
+      <div className="flex flex-col gap-3 px-4 py-3 border-b border-zinc-800 shrink-0">
         <h2 className="text-sm font-semibold text-zinc-100">Graph Algorithms</h2>
-        <Button variant="ghost" size="icon" onClick={() => setExpanded(false)}
-          className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800">
-          <PanelLeftClose className="w-5 h-5" />
-        </Button>
+        <div className="flex gap-2">
+        <Link href="/about" className="shrink-0 min-w-0">
+            <Button variant="outline" size="sm" className="w-auto bg-zinc-900 border-zinc-700 hover:bg-zinc-800 gap-2">
+              <PersonStandingIcon className="w-4 h-4" />
+              
+            </Button>
+          </Link>
+          <Link href="/compare" className="flex-1 min-w-0">
+            <Button variant="outline" size="sm" className="w-full bg-zinc-900 border-zinc-700 hover:bg-zinc-800 gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Compare
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={() => setExpanded(false)}
+            className="shrink-0 bg-zinc-900 border-zinc-700 hover:bg-zinc-800">
+            <PanelLeftClose className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
-      <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+      <ScrollArea className="flex-1 min-h-0 overscroll-contain">
         <div className="space-y-6 p-4">
           <GraphSettings />
           <Separator className="bg-zinc-800" />
@@ -149,6 +174,7 @@ export function Sidebar() {
           <AlgorithmSelector />
           <Separator className="bg-zinc-800" />
           <PlaybackControls />
+          <div className="h-4" />
         </div>
       </ScrollArea>
     </div>

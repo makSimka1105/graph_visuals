@@ -28,53 +28,56 @@ export function GraphSettings() {
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Graph Settings
       </h3>
+      <div className="grid grid-cols-2 gap-x-10 space-y-1">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="directed" className="text-zinc-300 text-sm">Directed</Label>
+          <Switch
+            id="directed"
+            checked={directed}
+            onCheckedChange={(v) => {
+              dispatch(setDirected(v));
+              dispatch(resetPlayback());
+            }}
+          />
+        </div>
 
-      <div className="flex items-center justify-between">
-        <Label htmlFor="directed" className="text-zinc-300 text-sm">Directed</Label>
-        <Switch
-          id="directed"
-          checked={directed}
-          onCheckedChange={(v) => {
-            dispatch(setDirected(v));
-            dispatch(resetPlayback());
-          }}
-        />
-      </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="weighted" className="text-zinc-300 text-sm">Weighted</Label>
+          <Switch
+            id="weighted"
+            checked={weighted}
+            onCheckedChange={(v) => {
+              dispatch(setWeighted(v));
+              dispatch(resetPlayback());
+            }}
+          />
+        </div>
 
-      <div className="flex items-center justify-between">
-        <Label htmlFor="weighted" className="text-zinc-300 text-sm">Weighted</Label>
-        <Switch
-          id="weighted"
-          checked={weighted}
-          onCheckedChange={(v) => {
-            dispatch(setWeighted(v));
-            dispatch(resetPlayback());
-          }}
-        />
-      </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="acyclic" className="text-zinc-300 text-sm">Acyclic</Label>
+          <Switch
+            id="acyclic"
+            checked={acyclic}
+            onCheckedChange={(v) => {
+              dispatch(setAcyclic(v));
+              dispatch(resetPlayback());
+            }}
+          />
+        </div>
 
-      <div className="flex items-center justify-between">
-        <Label htmlFor="acyclic" className="text-zinc-300 text-sm">Acyclic</Label>
-        <Switch
-          id="acyclic"
-          checked={acyclic}
-          onCheckedChange={(v) => {
-            dispatch(setAcyclic(v));
-            dispatch(resetPlayback());
-          }}
-        />
-      </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="showDistances" className="text-zinc-300 text-sm">Show distances</Label>
+          <Switch
+            id="showDistances"
+            checked={showDistances}
+            onCheckedChange={(v) => {
+              dispatch(setShowDistances(v));
+            }}
+          />
+        </div>
 
-      <div className="flex items-center justify-between">
-        <Label htmlFor="showDistances" className="text-zinc-300 text-sm">Show distances</Label>
-        <Switch
-          id="showDistances"
-          checked={showDistances}
-          onCheckedChange={(v) => {
-            dispatch(setShowDistances(v));
-          }}
-        />
       </div>
+      
       {showDistances && (
         <p className="text-[11px] text-zinc-500 -mt-1">
           Display shortest distance to each node during algorithm playback
