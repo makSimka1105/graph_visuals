@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="flex w-screen h-screen overflow-hidden bg-zinc-950">
+    <div className="flex w-screen h-[100dvh] min-h-screen overflow-hidden bg-zinc-950">
       <Sidebar />
 
       <div className="relative flex flex-col flex-1 h-full min-w-0">

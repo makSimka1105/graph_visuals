@@ -65,7 +65,7 @@ export function Sidebar() {
 
   if (!expanded) {
     return (
-      <div className="h-full w-14 bg-zinc-950 border-r border-zinc-800 flex flex-col items-center py-4 gap-3 shrink-0">
+      <div className="h-[100dvh] min-h-screen max-h-[100dvh] w-14 bg-zinc-950 border-r border-zinc-800 flex flex-col items-center py-4 gap-3 shrink-0">
         <Button
           variant="ghost" size="icon"
           onClick={() => setExpanded(true)}
@@ -132,15 +132,15 @@ export function Sidebar() {
   }
 
   return (
-    <div className="h-full w-[360px] bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+    <div className="h-[100dvh] min-h-screen max-h-[100dvh] w-[360px] bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
         <h2 className="text-sm font-semibold text-zinc-100">Graph Algorithms</h2>
         <Button variant="ghost" size="icon" onClick={() => setExpanded(false)}
           className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800">
           <PanelLeftClose className="w-5 h-5" />
         </Button>
       </div>
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0 overflow-hidden">
         <div className="space-y-6 p-4">
           <GraphSettings />
           <Separator className="bg-zinc-800" />
