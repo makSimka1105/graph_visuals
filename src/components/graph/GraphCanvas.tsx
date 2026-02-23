@@ -81,12 +81,8 @@ export function GraphCanvas() {
     const mq = window.matchMedia("(pointer: coarse)");
     const update = () => setIsCoarsePointer(mq.matches);
     update();
-    if ("addEventListener" in mq) {
-      mq.addEventListener("change", update);
-      return () => mq.removeEventListener("change", update);
-    }
-    mq.addListener(update);
-    return () => mq.removeListener(update);
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
