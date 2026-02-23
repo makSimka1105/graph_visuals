@@ -57,7 +57,7 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
         className={`
           flex items-center justify-center
           rounded-full
-          w-10 h-10
+          w-11 h-11 md:w-10 md:h-10
           border-2 ${highlightBorder || styles.border} ${styles.bg} ${styles.text}
           font-mono font-bold text-sm
           shadow-lg shadow-black/30

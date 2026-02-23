@@ -70,11 +70,24 @@ export function GraphCanvas() {
   const [cycleWarning, setCycleWarning] = useState(false);
   const [editingEdge, setEditingEdge] = useState<{ edgeId: string; weight: number; weightInput: string; x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
 
   const isPlayback = steps.length > 0;
   const stepForDistances = currentStep ?? (steps.length > 0 ? steps[0] : null);
 
   const closeMenu = useCallback(() => setCtxMenu(null), []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const update = () => setIsCoarsePointer(mq.matches);
+    update();
+    if ("addEventListener" in mq) {
+      mq.addEventListener("change", update);
+      return () => mq.removeEventListener("change", update);
+    }
+    mq.addListener(update);
+    return () => mq.removeListener(update);
+  }, []);
 
   useEffect(() => {
     if (!ctxMenu) return;
@@ -352,7 +365,7 @@ export function GraphCanvas() {
   );
 
   return (
-    <div ref={containerRef} className="w-full h-full relative">
+    <div ref={containerRef} className="w-full h-full relative touch-none">
       <EmptyState />
       <ReactFlow
         nodes={nodes}
@@ -381,14 +394,18 @@ export function GraphCanvas() {
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#27272a" />
         <Controls
           position="top-left"
-          className="!bg-zinc-800 !border-zinc-700 !rounded-lg [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!text-zinc-300 [&>button:hover]:!bg-zinc-700"
+          className="!bg-zinc-800 !border-zinc-700 !rounded-lg [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!text-zinc-300 [&>button:hover]:!bg-zinc-700 [@media(pointer:coarse)]:[&>button]:!w-11 [@media(pointer:coarse)]:[&>button]:!h-11"
         />
       </ReactFlow>
 
       {edgeSourceId && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-sky-900/80 text-sky-200 text-xs px-4 py-2 rounded-lg border border-sky-700 flex items-center gap-2 z-50">
           <Link className="w-3.5 h-3.5" />
-          Click a target node to connect from <span className="font-bold">{edgeSourceId}</span>
+          {isCoarsePointer ? (
+            <>Tap a target node to connect from <span className="font-bold">{edgeSourceId}</span></>
+          ) : (
+            <>Click a target node to connect from <span className="font-bold">{edgeSourceId}</span></>
+          )}
           <button
             onClick={() => setEdgeSourceId(null)}
             className="ml-2 text-sky-400 hover:text-sky-200 underline"
@@ -458,15 +475,24 @@ export function GraphCanvas() {
       )}
 
       {!isPlayback && graphNodes.length > 0 && !edgeSourceId && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 text-[10px] text-zinc-600 pointer-events-none select-none">
-          <span>Left click to add node</span>
-          <span>|</span>
-          <span>Click edge for menu</span>
-          <span>|</span>
-          <span>Left click on node to edit</span>
-          <span>|</span>
-          <span>Select + Delete to remove</span>
-        </div>
+        <>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 hidden md:flex gap-3 text-[10px] text-zinc-600 pointer-events-none select-none">
+            <span>Left click to add node</span>
+            <span>|</span>
+            <span>Click edge for menu</span>
+            <span>|</span>
+            <span>Left click on node to edit</span>
+            <span>|</span>
+            <span>Select + Delete to remove</span>
+          </div>
+          <div className="absolute bottom-[calc(3.25rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 flex md:hidden gap-2 text-[11px] text-zinc-500 bg-zinc-900/70 border border-zinc-800 rounded-full px-3 py-1.5 backdrop-blur-sm pointer-events-none select-none max-w-[calc(100%-6rem)] justify-center text-center">
+            <span>Tap to add</span>
+            <span className="opacity-60">•</span>
+            <span>Tap node to edit</span>
+            <span className="opacity-60">•</span>
+            <span>Tap edge for menu</span>
+          </div>
+        </>
       )}
     </div>
   );

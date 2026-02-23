@@ -128,7 +128,7 @@ function CustomEdgeComponent({
         d={edgePath}
         fill="none"
         stroke="transparent"
-        strokeWidth={20}
+        strokeWidth={28}
         style={{ cursor: "pointer" }}
         onClick={(ev) => {
           ev.stopPropagation();

@@ -27,11 +27,11 @@ export function GraphLegend() {
   const items = isBidirectional ? [...baseLegend, ...backwardLegend] : baseLegend;
 
   return (
-    <div className="absolute bottom-4 left-4 z-10 flex flex-wrap gap-3 bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 rounded-lg px-4 py-2">
+    <div className="absolute bottom-2 left-2 right-2 md:right-auto md:bottom-4 md:left-4 z-10 flex flex-wrap justify-center md:justify-start gap-2 md:gap-3 bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 rounded-lg px-3 md:px-4 py-2">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5">
           <div className={`w-3 h-3 rounded-full ${item.color} border ${item.border}`} />
-          <span className="text-xs text-zinc-400">{item.label}</span>
+          <span className="text-[11px] md:text-xs text-zinc-400">{item.label}</span>
         </div>
       ))}
     </div>

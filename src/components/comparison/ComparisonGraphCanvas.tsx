@@ -70,7 +70,7 @@ export function ComparisonGraphCanvas({ step }: Props) {
   }, [graphEdges, directed, weighted, step, overrides]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full touch-none">
       <ReactFlow
         nodes={flowNodes}
         edges={flowEdges}
@@ -80,7 +80,7 @@ export function ComparisonGraphCanvas({ step }: Props) {
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
-        panOnDrag={false}
+        panOnDrag={true}
         zoomOnScroll={false}
         proOptions={{ hideAttribution: true }}
         className="bg-zinc-950"

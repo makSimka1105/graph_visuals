@@ -204,11 +204,11 @@ export function ComparisonView() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex flex-wrap items-end gap-4 px-6 py-4 border-b border-zinc-800 bg-zinc-950 shrink-0">
-        <div className="space-y-1">
+      <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-end gap-3 md:gap-4 px-3 md:px-6 py-3 md:py-4 border-b border-zinc-800 bg-zinc-950 shrink-0">
+        <div className="space-y-1 w-full md:w-auto">
           <Label className="text-zinc-400 text-xs">Preset</Label>
           <Select value={preset} onValueChange={loadPreset}>
-            <SelectTrigger className="w-[160px] bg-zinc-900 border-zinc-700 text-zinc-200">
+            <SelectTrigger className="w-full md:w-[160px] bg-zinc-900 border-zinc-700 text-zinc-200">
               <SelectValue placeholder="Preset..." />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -218,11 +218,11 @@ export function ComparisonView() {
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" size="sm" onClick={generateRandom} className="bg-zinc-900 border-zinc-700">
+        <Button variant="outline" size="sm" onClick={generateRandom} className="bg-zinc-900 border-zinc-700 w-full md:w-auto">
           Random Graph
         </Button>
-        <Separator orientation="vertical" className="h-8 bg-zinc-800" />
-        <div className="space-y-1">
+        <Separator orientation="vertical" className="h-8 bg-zinc-800 hidden md:block" />
+        <div className="space-y-1 w-full md:w-auto">
           <Label className="text-zinc-400 text-xs">Graph</Label>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             <div className="flex items-center gap-2">
@@ -243,11 +243,11 @@ export function ComparisonView() {
             </div>
           </div>
         </div>
-        <Separator orientation="vertical" className="h-8 bg-zinc-800" />
-        <div className="space-y-1">
+        <Separator orientation="vertical" className="h-8 bg-zinc-800 hidden md:block" />
+        <div className="space-y-1 w-full md:w-auto">
           <Label className="text-zinc-400 text-xs">Algorithm A</Label>
           <Select value={algIdA} onValueChange={setAlgIdA}>
-            <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-700 text-zinc-200">
+            <SelectTrigger className="w-full md:w-[180px] bg-zinc-900 border-zinc-700 text-zinc-200">
               <SelectValue placeholder="Select..." />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -257,10 +257,10 @@ export function ComparisonView() {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-1 w-full md:w-auto">
           <Label className="text-zinc-400 text-xs">Algorithm B</Label>
           <Select value={algIdB} onValueChange={setAlgIdB}>
-            <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-700 text-zinc-200">
+            <SelectTrigger className="w-full md:w-[180px] bg-zinc-900 border-zinc-700 text-zinc-200">
               <SelectValue placeholder="Select..." />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -273,12 +273,12 @@ export function ComparisonView() {
         <Button
           onClick={runComparison}
           disabled={!canRun}
-          className="gap-2"
+          className="gap-2 w-full md:w-auto"
         >
           <Rocket className="w-4 h-4" />
           Compare
         </Button>
-        <div className="flex flex-col gap-0.5 min-w-0 max-w-[280px]">
+        <div className="flex flex-col gap-0.5 min-w-0 max-w-none md:max-w-[280px]">
           {runErrors.length > 0 && (
             <div className="space-y-0.5">
               {runErrors.map((err, i) => (
@@ -310,7 +310,7 @@ export function ComparisonView() {
           )}
         </div>
         {stepsA.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-start">
             <Button variant="outline" size="icon" onClick={() => setCurrentStepIdx((i) => Math.max(-1, i - 1))} disabled={currentStepIdx <= -1}>
               <SkipBack className="w-4 h-4" />
             </Button>
@@ -337,15 +337,15 @@ export function ComparisonView() {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 flex min-h-0">
-          <div className="flex-1 border-r border-zinc-800 relative">
-            <div className="absolute top-2 left-2 z-10 bg-zinc-900/90 text-zinc-300 text-xs px-2 py-1 rounded">
+        <div className="flex-1 flex flex-col md:flex-row min-h-0">
+          <div className="flex-1 h-1/2 md:h-auto border-b md:border-b-0 md:border-r border-zinc-800 relative">
+            <div className="absolute top-2 left-2 z-10 bg-zinc-900/90 text-zinc-300 text-[11px] px-2 py-1 rounded">
               {algIdA ? algorithms.find((a) => a.id === algIdA)?.name : "Algorithm A"}
             </div>
             <ComparisonGraphCanvas step={stepA} />
           </div>
-          <div className="flex-1 relative">
-            <div className="absolute top-2 left-2 z-10 bg-zinc-900/90 text-zinc-300 text-xs px-2 py-1 rounded">
+          <div className="flex-1 h-1/2 md:h-auto relative">
+            <div className="absolute top-2 left-2 z-10 bg-zinc-900/90 text-zinc-300 text-[11px] px-2 py-1 rounded">
               {algIdB ? algorithms.find((a) => a.id === algIdB)?.name : "Algorithm B"}
             </div>
             <ComparisonGraphCanvas step={stepB} />
@@ -353,7 +353,7 @@ export function ComparisonView() {
         </div>
 
         {metrics.length > 0 && (
-          <div className="h-[200px] shrink-0 border-t border-zinc-800 px-6 py-4">
+          <div className="h-[160px] md:h-[200px] shrink-0 border-t border-zinc-800 px-3 md:px-6 py-3 md:py-4">
             <MetricsChart metrics={metrics} />
           </div>
         )}

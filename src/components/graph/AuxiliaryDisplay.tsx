@@ -23,8 +23,8 @@ export function AuxiliaryDisplay() {
   if (!hasQueues) return null;
 
   return (
-    <div className="absolute bottom-4 right-4 z-10 flex flex-col-reverse items-end gap-3">
-      <div className="flex flex-col gap-3 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-4 py-3 max-w-[280px]">
+    <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 z-10 flex flex-col-reverse items-end gap-2 md:gap-3">
+      <div className="flex flex-col gap-3 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-3 md:px-4 py-2 md:py-3 max-w-[220px] md:max-w-[280px]">
         {hasQueues && queues!.map((q: AuxiliaryQueue, i: number) => {
           const isExtractStep = extractedInThisStep && currentVertexQueueIndex === i;
           const isLastAddTarget = lastAddedToQueue != null && lastAddedToQueueIndex === i;
@@ -78,7 +78,7 @@ export function AuxiliaryDisplay() {
           return null;
         })}
       </div>
-      <div className="flex flex-col gap-1 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-3 py-2 shrink-0 min-w-[60px]">
+      <div className="flex flex-col gap-1 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-2.5 md:px-3 py-2 shrink-0 min-w-[56px] md:min-w-[60px]">
         <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Visiting</span>
         <span className="text-sm font-mono font-medium text-amber-400 min-h-[20px]">
           {currentVertex ?? "-"}

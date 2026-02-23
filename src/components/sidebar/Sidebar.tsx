@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -63,9 +63,16 @@ export function Sidebar() {
     else dispatch(play());
   };
 
+  useEffect(() => {
+    const update = () => setExpanded(window.innerWidth >= 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   if (!expanded) {
     return (
-      <div className="h-[100dvh] min-h-screen max-h-[100dvh] w-14 bg-zinc-950 border-r border-zinc-800 flex flex-col items-center py-4 gap-3 shrink-0">
+      <div className="fixed md:static bottom-[calc(0.75rem+env(safe-area-inset-bottom))] right-[calc(0.75rem+env(safe-area-inset-right))] left-auto md:left-[calc(0.75rem+env(safe-area-inset-left))] md:right-auto z-[60] bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl md:rounded-none md:border-0 md:border-r md:border-zinc-800 flex flex-row md:flex-col items-center py-2 md:py-4 px-3 md:px-0 gap-3 shrink-0 md:h-[100dvh] md:min-h-screen md:max-h-[100dvh] md:w-14 shadow-lg pointer-events-auto">
         <Button
           variant="ghost" size="icon"
           onClick={() => setExpanded(true)}
@@ -73,7 +80,8 @@ export function Sidebar() {
         >
           <PanelLeftOpen className="w-5 h-5" />
         </Button>
-        <Separator className="bg-zinc-800 w-8" />
+        <span className="text-[11px] text-zinc-500 md:hidden select-none">Menu</span>
+        <Separator className="bg-zinc-800 w-8 hidden md:block" />
 
         {!hasSteps && canRun && (
           <Button variant="ghost" size="icon" onClick={handleRun} title="Run Algorithm"
@@ -132,7 +140,7 @@ export function Sidebar() {
   }
 
   return (
-    <div className="h-[100dvh] min-h-screen max-h-[100dvh] w-[360px] bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 overflow-hidden">
+    <div className="fixed md:static inset-x-0 top-0 z-40 md:z-auto bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col shrink-0 overflow-hidden w-full md:w-[360px] md:h-[100dvh] md:min-h-screen md:max-h-[100dvh]">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
         <h2 className="text-sm font-semibold text-zinc-100">Graph Algorithms</h2>
         <Button variant="ghost" size="icon" onClick={() => setExpanded(false)}
@@ -140,7 +148,7 @@ export function Sidebar() {
           <PanelLeftClose className="w-5 h-5" />
         </Button>
       </div>
-      <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+      <ScrollArea className="flex-1 min-h-0 overflow-hidden max-h-[75dvh] md:max-h-none">
         <div className="space-y-6 p-4">
           <GraphSettings />
           <Separator className="bg-zinc-800" />
