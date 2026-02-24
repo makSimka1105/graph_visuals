@@ -15,8 +15,10 @@ export default function Home() {
       <div className="relative flex flex-col flex-1 h-full min-w-0">
         <div className="relative flex-1 min-h-0">
           <GraphCanvas />
-          <GraphLegend />
-          <AuxiliaryDisplay />
+          <div className="absolute bottom-4 left-4 right-4 z-10 flex flex-nowrap items-end justify-between gap-4 min-w-0">
+            <GraphLegend />
+            <AuxiliaryDisplay />
+          </div>
           <StepDescription />
         </div>
       </div>

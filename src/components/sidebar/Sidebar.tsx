@@ -83,8 +83,6 @@ export function Sidebar() {
         >
           <PanelLeftOpen className="w-5 h-5" />
         </Button>
-        <span className="text-[11px] text-zinc-500 md:hidden select-none">Menu</span>
-        <Separator className="bg-zinc-800 w-8 hidden md:block" />
 
         {!hasSteps && canRun && (
           <Button variant="ghost" size="icon" onClick={handleRun} title="Run Algorithm"
@@ -144,7 +142,7 @@ export function Sidebar() {
 
   return (
     <div className="fixed md:static inset-0 md:inset-auto z-40 md:z-auto bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col shrink-0 overflow-hidden w-full md:w-[360px] h-[100dvh] md:h-[100dvh] md:min-h-screen md:max-h-[100dvh] overscroll-contain">
-      <div className="flex flex-col gap-3 px-4 py-3 border-b border-zinc-800 shrink-0">
+      <div className="flex flex-col gap-1 px-4 py-3 border-b border-zinc-800 shrink-0">
         <h2 className="text-sm font-semibold text-zinc-100">Graph Algorithms</h2>
         <div className="flex gap-2">
         <Link href="/about" className="shrink-0 min-w-0">
@@ -174,7 +172,7 @@ export function Sidebar() {
           <AlgorithmSelector />
           <Separator className="bg-zinc-800" />
           <PlaybackControls />
-          <div className="h-4" />
+          <div className="h-10" />
         </div>
       </ScrollArea>
     </div>
