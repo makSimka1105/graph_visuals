@@ -78,7 +78,7 @@ export function AuxiliaryDisplay() {
           return null;
         })}
       </div>
-      <div className="hidden sm:flex flex-col gap-1 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-3 py-2 shrink-0 min-w-[60px]">
+      <div className="flex flex-col gap-1 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-3 py-2 shrink-0 min-w-[60px]">
         <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Visiting</span>
         <span className="text-sm font-mono font-medium text-amber-400 min-h-[20px]">
           {currentVertex ?? "-"}
