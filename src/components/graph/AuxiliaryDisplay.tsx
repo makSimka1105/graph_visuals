@@ -23,8 +23,8 @@ export function AuxiliaryDisplay() {
   if (!hasQueues) return null;
 
   return (
-    <div className="flex flex-col-reverse items-end gap-1 shrink-1 max-w-1/2">
-      <div className="flex flex-col gap-3 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-4 py-3 max-w-[280px]">
+    <div className="flex flex-col-reverse items-end gap-1 min-w-0 shrink max-w-[70%] overflow-hidden">
+      <div className="flex flex-col gap-3 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-4 py-3 max-w-[280px] min-w-0">
         {hasQueues && queues!.map((q: AuxiliaryQueue, i: number) => {
           const isExtractStep = extractedInThisStep && currentVertexQueueIndex === i;
           const isLastAddTarget = lastAddedToQueue != null && lastAddedToQueueIndex === i;

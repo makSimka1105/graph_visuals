@@ -27,7 +27,7 @@ export function GraphLegend() {
   const items = isBidirectional ? [...baseLegend, ...backwardLegend] : baseLegend;
 
   return (
-    <div className=" flex max-w-[35%] flex-wrap gap-1 bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 overflow-hidden rounded-lg px-4 py-2 shrink">
+    <div className=" flex max-w-[30%] flex-wrap gap-1 bg-zinc-900/90 backdrop-blur-sm border border-zinc-800 overflow-hidden rounded-lg px-4 py-2 shrink-1">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5">
           <div className={`w-3 h-3 rounded-full ${item.color} border ${item.border}`} />
