@@ -39,7 +39,7 @@ export function PriorityQueueBlock({
                 key={`${nodeId}-${dist}-${i}`}
                 className="flex items-center justify-center px-1.5 py-0.5 rounded bg-zinc-800 text-xs font-mono text-zinc-200 border border-zinc-700 shrink-0"
               >
-                ({Number(dist).toFixed(1)}, {nodeId})
+                ({Number.isInteger(dist) ? dist : Number(dist).toFixed(1)}, {nodeId})
               </span>
             ))
           )}

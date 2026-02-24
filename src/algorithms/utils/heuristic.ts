@@ -16,6 +16,7 @@ export function getHeuristic(
   const goal = posMap[endNodeId] ?? { x: 0, y: 0 };
   return (nodeId) => {
     const a = posMap[nodeId] ?? { x: 0, y: 0 };
-    return Math.sqrt((a.x - goal.x) ** 2 + (a.y - goal.y) ** 2) * SCALE;
+    const raw = Math.sqrt((a.x - goal.x) ** 2 + (a.y - goal.y) ** 2) * SCALE;
+    return Math.floor(raw * 10); // integer: multiply by 10, drop fractional
   };
 }

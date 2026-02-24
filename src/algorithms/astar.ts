@@ -32,7 +32,7 @@ function astarRun(graph: Graph, startNode: string, endNode?: string): AlgorithmS
   const pushStep = createStepRecorder({ graph, nodeStates, edgeStates, steps, dist: g });
 
   nodeStates[startNode] = "inQueue";
-  pushStep(`Initialize A* from ${startNode}. g=0, h=${h(startNode).toFixed(1)}, f=0+${h(startNode).toFixed(1)}.`, {
+  pushStep(`Initialize A* from ${startNode}. g=0, h=${h(startNode)}, f=0+${h(startNode)}.`, {
     auxiliary: {
       queues: [{
         items: [startNode],
@@ -55,7 +55,7 @@ function astarRun(graph: Graph, startNode: string, endNode?: string): AlgorithmS
     visited.add(current);
     const gCurrent = g[current] ?? Infinity;
     nodeStates[current] = "current";
-    pushStep(`Extract min: ${current} with f=${fVal.toFixed(1)} (g=${gCurrent.toFixed(1)}, h=${h(current).toFixed(1)}).`, {
+    pushStep(`Extract min: ${current} with f=${fVal} (g=${gCurrent}, h=${h(current)}).`, {
       auxiliary: {
         queues: [{
           items: pq.toSortedArray().map((x) => x.nodeId),
@@ -92,7 +92,7 @@ function astarRun(graph: Graph, startNode: string, endNode?: string): AlgorithmS
         edgeStates[edgeId] = "current";
         nodeStates[nodeId] = "inQueue";
         pushStep(
-          `Relax edge to ${nodeId}${graph.weighted ? ` (weight ${edgeWeight})` : ""}. g=${newG.toFixed(1)}, h=${h(nodeId).toFixed(1)}, f=${fNew.toFixed(1)}.`,
+          `Relax edge to ${nodeId}${graph.weighted ? ` (weight ${edgeWeight})` : ""}. g=${newG}, h=${h(nodeId)}, f=${fNew}.`,
           {
             auxiliary: {
               queues: [{

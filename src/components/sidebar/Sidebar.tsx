@@ -66,8 +66,8 @@ export function Sidebar() {
 
   if (!expanded) {
     return (
-      <div className="fixed md:static right-[calc(0.75rem+env(safe-area-inset-right))] top-[calc(0.75rem+env(safe-area-inset-top))] bottom-0 md:top-auto md:bottom-0 md:h-[100dvh] md:flex-col md:items-center md:justify-center left-auto z-[60] md:z-auto pointer-events-auto">
-        <div className="flex flex-col items-center py-3 md:py-4 px-2 md:px-0 gap-2 bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl md:rounded-none md:border-0 md:border-r md:border-zinc-800 md:w-14 shadow-lg md:shadow-none shrink-0 w-auto">
+      <div className="fixed left-auto right-[calc(0.75rem+env(safe-area-inset-right))] md:left-[calc(0.75rem+env(safe-area-inset-left))] md:right-auto top-[calc(0.75rem+env(safe-area-inset-top))] bottom-0 z-[60] pointer-events-auto">
+        <div className="flex flex-col items-center py-3 md:py-4 px-2 md:px-0 gap-2 bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl  md:border-zinc-800 md:w-14 shadow-lg md:shadow-none shrink-0 w-auto">
         <Button
           variant="ghost"
           size="icon"

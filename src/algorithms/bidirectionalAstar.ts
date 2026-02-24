@@ -92,7 +92,7 @@ function bidirectionalAstarRun(
       const gCurrent = gF[current] ?? Infinity;
       nodeStates[current] = "current";
       pushStep(
-        `Forward: expand ${current} (g=${gCurrent.toFixed(1)}, h=${hF(current).toFixed(1)}, f=${fVal.toFixed(1)}).`,
+        `Forward: expand ${current} (g=${gCurrent}, h=${hF(current)}, f=${fVal}).`,
         { auxiliary: { ...toSorted(), currentVertex: current, currentVertexQueueIndex: 0, extractedInThisStep: true } }
       );
 
@@ -125,7 +125,7 @@ function bidirectionalAstarRun(
           }
 
           pushStep(
-            `Forward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG.toFixed(1)}, f=${fNew.toFixed(1)}.`,
+            `Forward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG}, f=${fNew}.`,
             { auxiliary: { ...toSorted(), currentVertex: current, lastAddedToQueue: nodeId, lastAddedToQueueIndex: 0 } }
           );
           edgeStates[edgeId] = "traversed";
@@ -143,7 +143,7 @@ function bidirectionalAstarRun(
       const gCurrent = gB[current] ?? Infinity;
       nodeStates[current] = "currentBackward";
       pushStep(
-        `Backward: expand ${current} (g=${gCurrent.toFixed(1)}, h=${hB(current).toFixed(1)}, f=${fVal.toFixed(1)}).`,
+        `Backward: expand ${current} (g=${gCurrent}, h=${hB(current)}, f=${fVal}).`,
         { auxiliary: { ...toSorted(), currentVertex: current, currentVertexQueueIndex: 1, extractedInThisStep: true } }
       );
 
@@ -176,7 +176,7 @@ function bidirectionalAstarRun(
           }
 
           pushStep(
-            `Backward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG.toFixed(1)}, f=${fNew.toFixed(1)}.`,
+            `Backward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG}, f=${fNew}.`,
             { auxiliary: { ...toSorted(), currentVertex: current, lastAddedToQueue: nodeId, lastAddedToQueueIndex: 1 } }
           );
           edgeStates[edgeId] = "traversedBackward";

@@ -32,7 +32,7 @@ function greedyBfsRun(graph: Graph, startNode: string, endNode?: string): Algori
   const pushStep = createStepRecorder({ graph, nodeStates, edgeStates, steps, dist: g });
 
   nodeStates[startNode] = "inQueue";
-  pushStep(`Initialize Greedy BFS from ${startNode}. h=${h(startNode).toFixed(1)}.`, {
+  pushStep(`Initialize Greedy BFS from ${startNode}. h=${h(startNode)}.`, {
     auxiliary: {
       queues: [{
         items: [startNode],
@@ -55,7 +55,7 @@ function greedyBfsRun(graph: Graph, startNode: string, endNode?: string): Algori
     visited.add(current);
     const gCurrent = g[current] ?? Infinity;
     nodeStates[current] = "current";
-    pushStep(`Extract min: ${current} with h=${hVal.toFixed(1)}.`, {
+    pushStep(`Extract min: ${current} with h=${hVal}.`, {
       auxiliary: {
         queues: [{
           items: pq.toSortedArray().map((x) => x.nodeId),
@@ -92,7 +92,7 @@ function greedyBfsRun(graph: Graph, startNode: string, endNode?: string): Algori
         edgeStates[edgeId] = "current";
         nodeStates[nodeId] = "inQueue";
         pushStep(
-          `Relax edge to ${nodeId}${graph.weighted ? ` (weight ${edgeWeight})` : ""}. h=${hNew.toFixed(1)}.`,
+          `Relax edge to ${nodeId}${graph.weighted ? ` (weight ${edgeWeight})` : ""}. h=${hNew}.`,
           {
             auxiliary: {
               queues: [{
