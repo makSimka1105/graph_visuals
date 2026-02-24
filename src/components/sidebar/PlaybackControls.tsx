@@ -1,29 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Play,
-  Pause,
-  SkipForward,
-  SkipBack,
-  RotateCcw,
-  Rocket,
-  AlertTriangle,
-} from "lucide-react";
+import { Rocket, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { useAppDispatch, useAppSelector, useCurrentStep } from "@/store/hooks";
-import {
-  play,
-  pause,
-  stepForward,
-  stepBackward,
-  setSpeed,
-  setSteps,
-  resetPlayback,
-} from "@/store/slices/algorithmSlice";
+import { setSpeed, setSteps } from "@/store/slices/algorithmSlice";
 import { getAlgorithm } from "@/algorithms/registry";
+import { PlaybackButtons } from "./PlaybackButtons";
 
 export function PlaybackControls() {
   const dispatch = useAppDispatch();
@@ -63,11 +48,6 @@ export function PlaybackControls() {
     dispatch(setSteps(result));
   };
 
-  const handlePlayPause = () => {
-    if (playbackState === "playing") dispatch(pause());
-    else dispatch(play());
-  };
-
   const sliderValue = Math.round(((1550 - speed) / 1500) * 100);
   const handleSpeedSlider = (vals: number[]) => {
     const ms = Math.round(1550 - (vals[0] / 100) * 1500);
@@ -105,30 +85,13 @@ export function PlaybackControls() {
 
       {hasSteps && (
         <>
-          <div className="flex items-center justify-center gap-2">
-            
-            <Button variant="outline" size="icon" onClick={() => dispatch(stepBackward())} disabled={currentStepIndex <= -1}>
-              <SkipBack className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="default"
-              size="icon"
-              onClick={handlePlayPause}
-              disabled={playbackState === "finished"}
-              className="w-10 h-10"
-            >
-              {playbackState === "playing" ? (
-                <Pause className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => dispatch(stepForward())} disabled={currentStepIndex >= steps.length - 1}>
-              <SkipForward className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => dispatch(resetPlayback())}>
-              <RotateCcw className="w-4 h-4" />
-            </Button>
+          <div className="flex flex-col items-center gap-2">
+            <PlaybackButtons
+              variant="outline"
+              playButtonVariant="default"
+              orientation="horizontal"
+              showStepCounter={false}
+            />
             <div className="text-center text-xs text-zinc-500">
               Step {currentStepIndex + 1} / {steps.length}
             </div>

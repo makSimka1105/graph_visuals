@@ -70,6 +70,17 @@ export function GraphCanvas() {
   const [cycleWarning, setCycleWarning] = useState(false);
   const [editingEdge, setEditingEdge] = useState<{ edgeId: string; weight: number; weightInput: string; x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastPaneClickRef = useRef<{ time: number; x: number; y: number } | null>(null);
+  const DBL_CLICK_MS = 400;
+  const DBL_CLICK_DIST = 10;
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  useEffect(() => {
+    const check = () => setIsTouchDevice(window.matchMedia("(pointer: coarse)").matches);
+    check();
+    const mq = window.matchMedia("(pointer: coarse)");
+    mq.addEventListener("change", check);
+    return () => mq.removeEventListener("change", check);
+  }, []);
 
   const isPlayback = steps.length > 0;
   const stepForDistances = currentStep ?? (steps.length > 0 ? steps[0] : null);
@@ -92,14 +103,28 @@ export function GraphCanvas() {
 
   const pathNodeIds = currentStep?.data?.pathNodeIds as string[] | undefined;
 
-  const handleEdgeClick = useCallback(
-    (event: React.MouseEvent, edge: Edge) => {
+  const openEdgeMenu = useCallback(
+    (event: React.MouseEvent, edgeId: string) => {
       if (isPlayback || edgeSourceId) return;
       event.stopPropagation();
       setEditingEdge(null);
-      setCtxMenu({ type: "edge", screenX: event.clientX, screenY: event.clientY, edgeId: edge.id });
+      setCtxMenu({ type: "edge", screenX: event.clientX, screenY: event.clientY, edgeId });
     },
     [isPlayback, edgeSourceId]
+  );
+
+  const handleEdgeClick = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      openEdgeMenu(event, edge.id);
+    },
+    [openEdgeMenu]
+  );
+
+  const handleEdgeDoubleClick = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      openEdgeMenu(event, edge.id);
+    },
+    [openEdgeMenu]
   );
 
   const flowNodes: Node[] = useMemo(() => {
@@ -134,11 +159,11 @@ export function GraphCanvas() {
           visualState: currentStep?.edgeStates[e.id] ?? "default",
           directed,
           selectedNodeId,
-          onEdgeClick: (ev: React.MouseEvent) => handleEdgeClick(ev, edge),
+          onEdgeClick: isTouchDevice ? undefined : (ev: React.MouseEvent) => handleEdgeClick(ev, edge),
         },
       };
     });
-  }, [graphEdges, directed, weighted, currentStep, selectedNodeId, handleEdgeClick]);
+  }, [graphEdges, directed, weighted, currentStep, selectedNodeId, handleEdgeClick, isTouchDevice]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -209,11 +234,30 @@ export function GraphCanvas() {
     [edgeSourceId, graphEdges, graphNodes, directed, acyclic, weighted, dispatch]
   );
 
-  const handlePaneClick = useCallback(() => {
-    setSelectedNodeId(null);
-    if (edgeSourceId) setEdgeSourceId(null);
-    setEditingEdge(null);
-  }, [edgeSourceId]);
+  const handlePaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      const now = Date.now();
+      const prev = lastPaneClickRef.current;
+      const isDoubleClick =
+        prev &&
+        now - prev.time < DBL_CLICK_MS &&
+        Math.abs(event.clientX - prev.x) < DBL_CLICK_DIST &&
+        Math.abs(event.clientY - prev.y) < DBL_CLICK_DIST;
+
+      if (isDoubleClick) {
+        lastPaneClickRef.current = null;
+        if (isPlayback || !rfInstance) return;
+        const pos = rfInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        setCtxMenu({ type: "pane", screenX: event.clientX, screenY: event.clientY, flowX: pos.x, flowY: pos.y });
+      } else {
+        lastPaneClickRef.current = { time: now, x: event.clientX, y: event.clientY };
+        setSelectedNodeId(null);
+        if (edgeSourceId) setEdgeSourceId(null);
+        setEditingEdge(null);
+      }
+    },
+    [edgeSourceId, isPlayback, rfInstance]
+  );
 
   const handlePaneContextMenu = useCallback(
     (event: MouseEvent | React.MouseEvent) => {
@@ -240,6 +284,15 @@ export function GraphCanvas() {
       if (isPlayback) return;
       setEditingEdge(null);
       setCtxMenu({ type: "edge", screenX: event.clientX, screenY: event.clientY, edgeId: edge.id });
+    },
+    [isPlayback]
+  );
+
+  const handleNodeDoubleClick = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      if (isPlayback) return;
+      setCtxMenu({ type: "node", screenX: event.clientX, screenY: event.clientY, nodeId: node.id });
     },
     [isPlayback]
   );
@@ -365,10 +418,13 @@ export function GraphCanvas() {
         onPaneClick={handlePaneClick}
         onEdgeClick={handleEdgeClick}
         onConnect={handleConnect}
+        onNodeDoubleClick={handleNodeDoubleClick}
+        onEdgeDoubleClick={handleEdgeDoubleClick}
         onNodeContextMenu={handleNodeContextMenu}
         onPaneContextMenu={handlePaneContextMenu}
         onEdgeContextMenu={handleEdgeContextMenu}
         onNodesDelete={handleNodesDelete}
+        zoomOnDoubleClick={false}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         deleteKeyCode="Delete"
@@ -388,7 +444,7 @@ export function GraphCanvas() {
       {edgeSourceId && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-sky-900/80 text-sky-200 text-xs px-4 py-2 rounded-lg border border-sky-700 flex items-center gap-2 z-50">
           <Link className="w-3.5 h-3.5" />
-          Click a target node to connect from <span className="font-bold">{edgeSourceId}</span>
+          {isTouchDevice ? "Tap" : "Click"} a target node to connect from <span className="font-bold">{edgeSourceId}</span>
           <button
             onClick={() => setEdgeSourceId(null)}
             className="ml-2 text-sky-400 hover:text-sky-200 underline"
@@ -457,15 +513,33 @@ export function GraphCanvas() {
         </div>
       )}
 
-      {!isPlayback && graphNodes.length > 0 && !edgeSourceId && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 text-[10px] text-zinc-600 pointer-events-none select-none">
-          <span>Left click to add node</span>
-          <span>|</span>
-          <span>Click edge for menu</span>
-          <span>|</span>
-          <span>Left click on node to edit</span>
-          <span>|</span>
-          <span>Select + Delete to remove</span>
+      {!isPlayback && !edgeSourceId && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-wrap gap-x-3 gap-y-1 justify-center text-[10px] text-zinc-600 pointer-events-none select-none max-w-[95vw] px-2">
+          {isTouchDevice ? (
+            <>
+              <span>Double-tap empty space to add node</span>
+              <span>|</span>
+              <span>Double-tap edge for menu</span>
+              <span>|</span>
+              <span>Tap node to select</span>
+              <span>|</span>
+              <span>Double-tap node for menu</span>
+              <span>|</span>
+              <span>Select + Delete to remove</span>
+            </>
+          ) : (
+            <>
+              <span>Right-click empty space to add node</span>
+              <span>|</span>
+              <span>Click edge for menu</span>
+              <span>|</span>
+              <span>Left click on node to select</span>
+              <span>|</span>
+              <span>Right-click node for menu</span>
+              <span>|</span>
+              <span>Select + Delete to remove</span>
+            </>
+          )}
         </div>
       )}
     </div>
