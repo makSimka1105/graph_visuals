@@ -151,7 +151,7 @@ export function Sidebar() {
               
             </Button>
           </Link>
-          <Link href="/compare" className="flex-1 min-w-0">
+          <Link href="/compare" className="hidden md:flex flex-1 min-w-0">
             <Button variant="outline" size="sm" className="w-full bg-zinc-900 border-zinc-700 hover:bg-zinc-800 gap-2">
               <BarChart3 className="w-4 h-4" />
               Compare
