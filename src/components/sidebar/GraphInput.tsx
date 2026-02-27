@@ -16,6 +16,15 @@ import { AlertTriangle, RotateCcw } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setGraph, setStartNode, setEndNode } from "@/store/slices/graphSlice";
 import { resetPlayback } from "@/store/slices/algorithmSlice";
+import {
+  setGraphA,
+  setGraphB,
+  setStartNodeA,
+  setEndNodeA,
+  setStartNodeB,
+  setEndNodeB,
+  comparisonClearResults,
+} from "@/store/slices/comparisonSlice";
 import { generateRandomGraph, edgeLimits } from "@/lib/graphGenerator";
 import { getPreset, presetList, getRecommendedCategoryLabel, type PresetTags } from "@/lib/presets";
 import { parseAdjacencyList } from "@/lib/graphParser";
@@ -30,22 +39,66 @@ function presetMatches(tags: PresetTags, directed: boolean, acyclic: boolean): b
 
 type InputMode = "preset" | "random" | "custom";
 
-export function GraphInput() {
+export type GraphInputSource = "main" | "A" | "B";
+
+interface GraphInputProps {
+  source?: GraphInputSource;
+}
+
+export function GraphInput({ source = "main" }: GraphInputProps) {
   const dispatch = useAppDispatch();
-  const directed = useAppSelector((s) => s.graph.directed);
-  const weighted = useAppSelector((s) => s.graph.weighted);
-  const acyclic = useAppSelector((s) => s.graph.acyclic);
-  const nodes = useAppSelector((s) => s.graph.nodes);
-  const sourcePresetId = useAppSelector((s) => s.graph.sourcePresetId);
-  const isModified = useAppSelector((s) => s.graph.isModified);
+  const isComparison = source !== "main";
+
+  const mainDirected = useAppSelector((s) => s.graph.directed);
+  const mainWeighted = useAppSelector((s) => s.graph.weighted);
+  const mainAcyclic = useAppSelector((s) => s.graph.acyclic);
+  const mainNodes = useAppSelector((s) => s.graph.nodes);
+  const mainStartNodeId = useAppSelector((s) => s.graph.startNodeId);
+  const mainEndNodeId = useAppSelector((s) => s.graph.endNodeId);
+  const mainSourcePresetId = useAppSelector((s) => s.graph.sourcePresetId);
+  const mainIsModified = useAppSelector((s) => s.graph.isModified);
+
+  const compDirected = useAppSelector((s) => s.comparison.directed);
+  const compWeighted = useAppSelector((s) => s.comparison.weighted);
+  const compAcyclic = useAppSelector((s) => s.comparison.acyclic);
+  const compGraphA = useAppSelector((s) => s.comparison.graphA);
+  const compGraphB = useAppSelector((s) => s.comparison.graphB);
+
+  const directed = isComparison ? compDirected : mainDirected;
+  const weighted = isComparison ? compWeighted : mainWeighted;
+  const acyclic = isComparison ? compAcyclic : mainAcyclic;
+  const nodes = isComparison
+    ? source === "A"
+      ? compGraphA.nodes
+      : compGraphB.nodes
+    : mainNodes;
+  const sourcePresetId = isComparison
+    ? source === "A"
+      ? compGraphA.sourcePresetId
+      : compGraphB.sourcePresetId
+    : mainSourcePresetId;
+  const isModified = isComparison
+    ? source === "A"
+      ? compGraphA.isModified
+      : compGraphB.isModified
+    : mainIsModified;
 
   const [mode, setMode] = useState<InputMode>("preset");
   const [selectedPreset, setSelectedPreset] = useState("");
   const [customInput, setCustomInput] = useState("");
   const [nodeCount, setNodeCount] = useState(12);
   const [edgeCount, setEdgeCount] = useState(18);
-  const [startId, setStartId] = useState("");
-  const [endId, setEndId] = useState("");
+
+  const startNodeId = isComparison
+    ? source === "A"
+      ? compGraphA.startNodeId
+      : compGraphB.startNodeId
+    : mainStartNodeId;
+  const endNodeId = isComparison
+    ? source === "A"
+      ? compGraphA.endNodeId
+      : compGraphB.endNodeId
+    : mainEndNodeId;
 
   const limits = useMemo(
     () => edgeLimits(nodeCount, directed, acyclic),
@@ -77,13 +130,26 @@ export function GraphInput() {
     const edgesCopy = edgesRaw.map((e) => ({ ...e }));
     const hasPositions = skipLayout && nodesCopy.every((n) => n.x != null && n.y != null);
     const finalNodes = hasPositions ? nodesCopy : applyLayout(nodesCopy, edgesCopy).nodes;
-    dispatch(setGraph({ nodes: finalNodes, edges: edgesCopy, sourcePresetId: presetId ?? null }));
-    dispatch(resetPlayback());
-    if (finalNodes.length > 0) {
-      setStartId(finalNodes[0].id);
-      setEndId(finalNodes[finalNodes.length - 1].id);
-      dispatch(setStartNode(finalNodes[0].id));
-      dispatch(setEndNode(finalNodes[finalNodes.length - 1].id));
+    const payload = { nodes: finalNodes, edges: edgesCopy, sourcePresetId: presetId ?? null };
+    if (source === "main") {
+      dispatch(setGraph(payload));
+      dispatch(resetPlayback());
+      if (finalNodes.length > 0) {
+        dispatch(setStartNode(finalNodes[0].id));
+        dispatch(setEndNode(finalNodes[finalNodes.length - 1].id));
+      }
+    } else if (source === "A") {
+      dispatch(setGraphA(payload));
+      if (finalNodes.length > 0) {
+        dispatch(setStartNodeA(finalNodes[0].id));
+        dispatch(setEndNodeA(finalNodes[finalNodes.length - 1].id));
+      }
+    } else {
+      dispatch(setGraphB(payload));
+      if (finalNodes.length > 0) {
+        dispatch(setStartNodeB(finalNodes[0].id));
+        dispatch(setEndNodeB(finalNodes[finalNodes.length - 1].id));
+      }
     }
   };
 
@@ -117,15 +183,16 @@ export function GraphInput() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Graph Input
       </h3>
 
-      <div className="space-y-2">
+      <div className="space-y-2 min-w-0">
         <Label className="text-zinc-300 text-xs">Source</Label>
+        <div className="w-full min-w-0 max-w-full">
         <Select value={mode} onValueChange={(v) => setMode(v as InputMode)}>
-          <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200">
+          <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -134,16 +201,18 @@ export function GraphInput() {
             <SelectItem value="custom">Adjacency List</SelectItem>
           </SelectContent>
         </Select>
+        </div>
       </div>
 
       {mode === "preset" && (
-        <div className="space-y-2">
-          <div className="flex gap-2">
+        <div className="space-y-2 min-w-0">
+          <div className="flex gap-2 min-w-0">
+            <div className="flex-1 min-w-0 max-w-full">
             <Select value={selectedPreset} onValueChange={handleSelectPreset}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 flex-1">
+              <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
                 <SelectValue placeholder="Choose preset..." />
               </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700 max-h-[300px]">
+            <SelectContent className="bg-zinc-900 border-zinc-700 max-h-[300px] max-w-[200px]">
               {(() => {
                 const recommended = presetList.filter((p) => presetMatches(p.tags, directed, acyclic));
                 const other = presetList.filter((p) => !presetMatches(p.tags, directed, acyclic));
@@ -155,7 +224,7 @@ export function GraphInput() {
                           {getRecommendedCategoryLabel(directed, acyclic)}
                         </div>
                         {recommended.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          <SelectItem key={p.id} value={p.id} className="truncate">{p.name}</SelectItem>
                         ))}
                       </>
                     )}
@@ -163,7 +232,7 @@ export function GraphInput() {
                       <>
                         <div className="px-2 py-1 text-[10px] text-zinc-600 uppercase tracking-wider mt-1">Other</div>
                         {other.map((p) => (
-                          <SelectItem key={p.id} value={p.id} className="opacity-60">{p.name}</SelectItem>
+                          <SelectItem key={p.id} value={p.id} className="opacity-60 truncate">{p.name}</SelectItem>
                         ))}
                       </>
                     )}
@@ -172,6 +241,7 @@ export function GraphInput() {
               })()}
             </SelectContent>
           </Select>
+            </div>
             {isModified && sourcePresetId && (
               <Button
                 variant="outline"
@@ -253,29 +323,61 @@ export function GraphInput() {
       )}
 
       {nodes.length > 0 && (
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2 pt-2 min-w-0">
           <Label className="text-zinc-400 text-xs">Start / End Node</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={startId} onValueChange={(v) => { setStartId(v); dispatch(setStartNode(v)); dispatch(resetPlayback()); }}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 min-w-0">
+            <div className="min-w-0 overflow-hidden">
+            <Select
+              value={startNodeId ?? ""}
+              onValueChange={(v) => {
+                if (source === "main") {
+                  dispatch(setStartNode(v));
+                  dispatch(resetPlayback());
+                } else if (source === "A") {
+                  dispatch(setStartNodeA(v));
+                  dispatch(comparisonClearResults());
+                } else {
+                  dispatch(setStartNodeB(v));
+                  dispatch(comparisonClearResults());
+                }
+              }}
+            >
+              <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
                 <SelectValue placeholder="Start" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-[200px]">
+              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-[200px] max-w-[160px]">
                 {nodes.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
+                  <SelectItem key={n.id} value={n.id} className="truncate">{n.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Select value={endId} onValueChange={(v) => { setEndId(v); dispatch(setEndNode(v)); dispatch(resetPlayback()); }}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200">
+            </div>
+            <div className="min-w-0 overflow-hidden">
+            <Select
+              value={endNodeId ?? ""}
+              onValueChange={(v) => {
+                if (source === "main") {
+                  dispatch(setEndNode(v));
+                  dispatch(resetPlayback());
+                } else if (source === "A") {
+                  dispatch(setEndNodeA(v));
+                  dispatch(comparisonClearResults());
+                } else {
+                  dispatch(setEndNodeB(v));
+                  dispatch(comparisonClearResults());
+                }
+              }}
+            >
+              <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
                 <SelectValue placeholder="End" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-[200px]">
+              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-[200px] max-w-[160px]">
                 {nodes.map((n) => (
-                  <SelectItem key={n.id} value={n.id}>{n.label}</SelectItem>
+                  <SelectItem key={n.id} value={n.id} className="truncate">{n.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            </div>
           </div>
         </div>
       )}

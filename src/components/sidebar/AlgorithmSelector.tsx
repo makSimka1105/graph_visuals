@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { AlertTriangle, Info, AlertCircle } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { selectAlgorithm } from "@/store/slices/algorithmSlice";
+import { setAlgA, setAlgB } from "@/store/slices/comparisonSlice";
 import { getAllAlgorithms, getAlgorithm } from "@/algorithms/registry";
 import { checkCompatibility, type GraphWarning } from "@/lib/graphValidator";
 
@@ -21,14 +22,49 @@ const severityConfig: Record<GraphWarning["severity"], { icon: typeof AlertTrian
   info:    { icon: Info,          containerCls: "bg-sky-950/20 text-sky-400/80",       textCls: "text-sky-400/80" },
 };
 
-export function AlgorithmSelector() {
+export type AlgorithmSelectorSource = "main" | "A" | "B";
+
+interface AlgorithmSelectorProps {
+  source?: AlgorithmSelectorSource;
+}
+
+export function AlgorithmSelector({ source = "main" }: AlgorithmSelectorProps) {
   const dispatch = useAppDispatch();
-  const selectedId = useAppSelector((s) => s.algorithm.selectedAlgorithmId);
-  const directed = useAppSelector((s) => s.graph.directed);
-  const weighted = useAppSelector((s) => s.graph.weighted);
-  const acyclic = useAppSelector((s) => s.graph.acyclic);
-  const nodes = useAppSelector((s) => s.graph.nodes);
-  const edges = useAppSelector((s) => s.graph.edges);
+  const isComparison = source !== "main";
+
+  const mainSelectedId = useAppSelector((s) => s.algorithm.selectedAlgorithmId);
+  const mainDirected = useAppSelector((s) => s.graph.directed);
+  const mainWeighted = useAppSelector((s) => s.graph.weighted);
+  const mainAcyclic = useAppSelector((s) => s.graph.acyclic);
+  const mainNodes = useAppSelector((s) => s.graph.nodes);
+  const mainEdges = useAppSelector((s) => s.graph.edges);
+
+  const compAlgA = useAppSelector((s) => s.comparison.algA);
+  const compAlgB = useAppSelector((s) => s.comparison.algB);
+  const compDirected = useAppSelector((s) => s.comparison.directed);
+  const compWeighted = useAppSelector((s) => s.comparison.weighted);
+  const compAcyclic = useAppSelector((s) => s.comparison.acyclic);
+  const compGraphA = useAppSelector((s) => s.comparison.graphA);
+  const compGraphB = useAppSelector((s) => s.comparison.graphB);
+
+  const selectedId = isComparison
+    ? source === "A"
+      ? compAlgA
+      : compAlgB
+    : mainSelectedId;
+  const directed = isComparison ? compDirected : mainDirected;
+  const weighted = isComparison ? compWeighted : mainWeighted;
+  const acyclic = isComparison ? compAcyclic : mainAcyclic;
+  const nodes = isComparison
+    ? source === "A"
+      ? compGraphA.nodes
+      : compGraphB.nodes
+    : mainNodes;
+  const edges = isComparison
+    ? source === "A"
+      ? compGraphA.edges
+      : compGraphB.edges
+    : mainEdges;
 
   const algorithms = getAllAlgorithms();
 
@@ -44,18 +80,24 @@ export function AlgorithmSelector() {
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 min-w-0 w-full overflow-hidden">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Algorithm
       </h3>
+      <div className="w-full min-w-0 max-w-full">
       <Select
         value={selectedId ?? ""}
-        onValueChange={(v) => dispatch(selectAlgorithm(v || null))}
+        onValueChange={(v) => {
+          const val = v || null;
+          if (source === "main") dispatch(selectAlgorithm(val));
+          else if (source === "A") dispatch(setAlgA(val));
+          else dispatch(setAlgB(val));
+        }}
       >
-        <SelectTrigger className={`bg-zinc-900 border-zinc-700 text-zinc-200 ${selectedCompat && !selectedCompat.ok ? "border-red-800" : ""}`}>
+        <SelectTrigger className={`bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate ${selectedCompat && !selectedCompat.ok ? "border-red-800" : ""}`}>
           <SelectValue placeholder="Select algorithm..." />
         </SelectTrigger>
-        <SelectContent className="bg-zinc-900 border-zinc-700">
+        <SelectContent className="bg-zinc-900 border-zinc-700 max-w-[200px]">
           {algorithms.map((alg) => {
             const compat = checkCompatibility(alg, graphState);
             const firstError = compat.warnings.find((w) => w.severity === "error");
@@ -77,6 +119,7 @@ export function AlgorithmSelector() {
           })}
         </SelectContent>
       </Select>
+      </div>
 
       {selectedAlg && (
         <div className="space-y-2">

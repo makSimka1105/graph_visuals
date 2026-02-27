@@ -1,12 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 import graphReducer from "./slices/graphSlice";
 import algorithmReducer from "./slices/algorithmSlice";
+import comparisonReducer from "./slices/comparisonSlice";
 
 export const makeStore = () =>
   configureStore({
     reducer: {
       graph: graphReducer,
       algorithm: algorithmReducer,
+      comparison: comparisonReducer,
     },
   });
 

@@ -64,6 +64,54 @@ function hasNegativeWeights(edges: GraphEdge[]): boolean {
   return edges.some((e) => (e.weight ?? 1) < 0);
 }
 
+/**
+ * Detects if the graph contains a negative cycle (cycle with total weight < 0).
+ * For undirected: any negative edge implies a negative cycle (u-v-u).
+ * For directed: Bellman-Ford with supersource.
+ */
+export function hasNegativeCycle(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  directed: boolean,
+  weighted: boolean,
+): boolean {
+  if (nodes.length === 0 || edges.length === 0) return false;
+  if (!weighted) return false;
+
+  if (!directed) {
+    return hasNegativeWeights(edges);
+  }
+
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  const dist = new Map<string, number>();
+  for (const n of nodes) dist.set(n.id, Infinity);
+  dist.set("__supersource__", 0);
+
+  const edgeList: { u: string; v: string; w: number }[] = [];
+  for (const n of nodes) {
+    edgeList.push({ u: "__supersource__", v: n.id, w: 0 });
+  }
+  for (const e of edges) {
+    if (nodeIds.has(e.source) && nodeIds.has(e.target)) {
+      edgeList.push({ u: e.source, v: e.target, w: e.weight ?? 1 });
+    }
+  }
+
+  for (let i = 0; i <= nodes.length; i++) {
+    let relaxed = false;
+    for (const { u, v, w } of edgeList) {
+      const du = dist.get(u) ?? Infinity;
+      const dv = dist.get(v) ?? Infinity;
+      if (du !== Infinity && du + w < dv) {
+        dist.set(v, du + w);
+        relaxed = true;
+      }
+    }
+    if (i === nodes.length && relaxed) return true;
+  }
+  return false;
+}
+
 export function wouldCreateCycle(
   nodes: GraphNode[],
   edges: GraphEdge[],
@@ -133,6 +181,7 @@ export function getGraphWarnings(
   edges: GraphEdge[],
   directed: boolean,
   acyclic: boolean,
+  weighted?: boolean,
 ): GraphWarning[] {
   if (nodes.length === 0) return [];
 
@@ -149,6 +198,13 @@ export function getGraphWarnings(
     warnings.push({
       severity: "info",
       message: "Graph has negative edge weights",
+    });
+  }
+
+  if (weighted && edges.length > 0 && hasNegativeCycle(nodes, edges, directed, weighted)) {
+    warnings.push({
+      severity: "warning",
+      message: "Graph contains a negative cycle — shortest path algorithms may fail or give incorrect results",
     });
   }
 

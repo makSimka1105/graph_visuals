@@ -2,9 +2,15 @@
 
 import { useAppSelector } from "@/store/hooks";
 import { GitBranch } from "lucide-react";
+import type { GraphNode } from "@/types/graph";
 
-export function EmptyState() {
-  const hasNodes = useAppSelector((s) => s.graph.nodes.length > 0);
+interface EmptyStateProps {
+  nodesOverride?: GraphNode[];
+}
+
+export function EmptyState({ nodesOverride }: EmptyStateProps) {
+  const mainNodes = useAppSelector((s) => s.graph.nodes);
+  const hasNodes = (nodesOverride ?? mainNodes).length > 0;
   if (hasNodes) return null;
 
   return (

@@ -148,5 +148,15 @@
   animation: path-glow 0.6s ease-out forwards;
 }
 
+/* Debug: add class "debug-borders" to html to highlight all element boundaries in bright green */
+.debug-borders * {
+  outline: 1px solid lime !important;
+}
+
+/* Fix Radix ScrollArea: display:table on viewport breaks width constraints, content overflows */
+[data-radix-scroll-area-viewport] > div {
+  display: block !important;
+  min-width: 0 !important;
+}
 
 

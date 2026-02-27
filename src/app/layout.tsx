@@ -7,13 +7,15 @@ export const metadata: Metadata = {
   title: "Graph Algorithms Visualizer",
   description: "Interactive visualization of graph algorithms"};
 
+const debugBorders = process.env.NEXT_PUBLIC_DEBUG_BORDERS === "true";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${debugBorders ? "debug-borders" : ""}`}>
       <body className="antialiased font-sans">
         <StoreProvider>
           <TooltipProvider delayDuration={400}>

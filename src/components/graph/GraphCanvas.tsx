@@ -36,7 +36,32 @@ import {
   setEndNode,
 } from "@/store/slices/graphSlice";
 import { resetPlayback } from "@/store/slices/algorithmSlice";
+import {
+  updateNodePositionsA,
+  updateNodePositionsB,
+  addNodeA,
+  addNodeB,
+  removeNodeA,
+  removeNodeB,
+  addEdgeA,
+  addEdgeB,
+  removeEdgeA,
+  removeEdgeB,
+  updateEdgeWeightA,
+  updateEdgeWeightB,
+  setStartNodeA,
+  setEndNodeA,
+  setStartNodeB,
+  setEndNodeB,
+  comparisonResetPlayback,
+} from "@/store/slices/comparisonSlice";
 import { wouldCreateCycle } from "@/lib/graphValidator";
+
+export type GraphCanvasSource = "main" | "A" | "B";
+
+interface GraphCanvasProps {
+  source?: GraphCanvasSource;
+}
 import { CustomNode } from "./CustomNode";
 import { CustomEdge } from "./CustomEdge";
 import { EmptyState } from "./EmptyState";
@@ -50,19 +75,55 @@ type CtxMenu =
   | { type: "edge"; screenX: number; screenY: number; edgeId: string }
   | null;
 
-export function GraphCanvas() {
+export function GraphCanvas({ source = "main" }: GraphCanvasProps) {
   const dispatch = useAppDispatch();
-  const graphNodes = useAppSelector((state) => state.graph.nodes);
-  const graphEdges = useAppSelector((state) => state.graph.edges);
-  const directed = useAppSelector((state) => state.graph.directed);
-  const weighted = useAppSelector((state) => state.graph.weighted);
-  const startNodeId = useAppSelector((state) => state.graph.startNodeId);
-  const endNodeId = useAppSelector((state) => state.graph.endNodeId);
-  const showDistances = useAppSelector((state) => state.graph.showDistances);
-  const { steps, currentStep } = useCurrentStep();
+  const isComparison = source !== "main";
 
-  const acyclic = useAppSelector((state) => state.graph.acyclic);
-  const graphVersion = useAppSelector((state) => state.graph.version);
+  const mainGraph = useAppSelector((state) => state.graph);
+  const compState = useAppSelector((state) => state.comparison);
+  const { steps: mainSteps, currentStep: mainCurrentStep } = useCurrentStep();
+
+  const graphNodes = isComparison
+    ? source === "A"
+      ? compState.graphA.nodes
+      : compState.graphB.nodes
+    : mainGraph.nodes;
+  const graphEdges = isComparison
+    ? source === "A"
+      ? compState.graphA.edges
+      : compState.graphB.edges
+    : mainGraph.edges;
+  const directed = isComparison ? compState.directed : mainGraph.directed;
+  const weighted = isComparison ? compState.weighted : mainGraph.weighted;
+  const startNodeId = isComparison
+    ? source === "A"
+      ? compState.graphA.startNodeId
+      : compState.graphB.startNodeId
+    : mainGraph.startNodeId;
+  const endNodeId = isComparison
+    ? source === "A"
+      ? compState.graphA.endNodeId
+      : compState.graphB.endNodeId
+    : mainGraph.endNodeId;
+  const showDistances = isComparison ? compState.showDistances : mainGraph.showDistances;
+  const acyclic = isComparison ? compState.acyclic : mainGraph.acyclic;
+  const graphVersion = isComparison
+    ? source === "A"
+      ? compState.graphA.version
+      : compState.graphB.version
+    : mainGraph.version;
+
+  const steps = isComparison
+    ? source === "A"
+      ? compState.stepsA
+      : compState.stepsB
+    : mainSteps;
+  const compStepIndex = compState.currentStepIndex;
+  const currentStep = isComparison
+    ? steps.length > 0 && compStepIndex >= 0
+      ? steps[Math.min(compStepIndex, steps.length - 1)] ?? null
+      : null
+    : mainCurrentStep;
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [ctxMenu, setCtxMenu] = useState<CtxMenu>(null);
@@ -194,10 +255,12 @@ export function GraphCanvas() {
         )
         .map((c) => ({ id: c.id, x: c.position.x, y: c.position.y }));
       if (positionChanges.length > 0) {
-        dispatch(updateNodePositions(positionChanges));
+        if (source === "main") dispatch(updateNodePositions(positionChanges));
+        else if (source === "A") dispatch(updateNodePositionsA(positionChanges));
+        else dispatch(updateNodePositionsB(positionChanges));
       }
     },
-    [onNodesChange, dispatch]
+    [onNodesChange, dispatch, source]
   );
 
   const nextNodeId = useCallback(() => {
@@ -213,13 +276,22 @@ export function GraphCanvas() {
             (ed) => ed.source === edgeSourceId && ed.target === node.id
           );
           if (!exists) {
-            dispatch(addEdgeAction({
+            const edgePayload = {
               id: `e${edgeSourceId}-${node.id}`,
               source: edgeSourceId,
               target: node.id,
               weight: weighted ? Math.floor(Math.random() * 10) + 1 : 1,
-            }));
-            dispatch(resetPlayback());
+            };
+            if (source === "main") {
+              dispatch(addEdgeAction(edgePayload));
+              dispatch(resetPlayback());
+            } else if (source === "A") {
+              dispatch(addEdgeA(edgePayload));
+              dispatch(comparisonResetPlayback());
+            } else {
+              dispatch(addEdgeB(edgePayload));
+              dispatch(comparisonResetPlayback());
+            }
             if (acyclic && wouldCreateCycle(graphNodes, graphEdges, directed, edgeSourceId, node.id)) {
               setCycleWarning(true);
               setTimeout(() => setCycleWarning(false), 4000);
@@ -231,7 +303,7 @@ export function GraphCanvas() {
       }
       setSelectedNodeId(node.id);
     },
-    [edgeSourceId, graphEdges, graphNodes, directed, acyclic, weighted, dispatch]
+    [edgeSourceId, graphEdges, graphNodes, directed, acyclic, weighted, dispatch, source]
   );
 
   const handlePaneClick = useCallback(
@@ -301,10 +373,19 @@ export function GraphCanvas() {
     if (!editingEdge) return;
     const parsed = parseFloat(editingEdge.weightInput);
     const w = Number.isNaN(parsed) ? editingEdge.weight : parsed;
-    dispatch(updateEdgeWeight({ id: editingEdge.edgeId, weight: w }));
-    dispatch(resetPlayback());
+    const payload = { id: editingEdge.edgeId, weight: w };
+    if (source === "main") {
+      dispatch(updateEdgeWeight(payload));
+      dispatch(resetPlayback());
+    } else if (source === "A") {
+      dispatch(updateEdgeWeightA(payload));
+      dispatch(comparisonResetPlayback());
+    } else {
+      dispatch(updateEdgeWeightB(payload));
+      dispatch(comparisonResetPlayback());
+    }
     setEditingEdge(null);
-  }, [editingEdge, dispatch]);
+  }, [editingEdge, dispatch, source]);
 
   const handleEditingEdgeKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -317,31 +398,64 @@ export function GraphCanvas() {
   const doAddNode = useCallback(() => {
     if (ctxMenu?.type !== "pane") return;
     const id = nextNodeId();
-    dispatch(addNodeAction({ id, label: id, x: ctxMenu.flowX, y: ctxMenu.flowY }));
-    dispatch(resetPlayback());
+    const nodePayload = { id, label: id, x: ctxMenu.flowX, y: ctxMenu.flowY };
+    if (source === "main") {
+      dispatch(addNodeAction(nodePayload));
+      dispatch(resetPlayback());
+    } else if (source === "A") {
+      dispatch(addNodeA(nodePayload));
+      dispatch(comparisonResetPlayback());
+    } else {
+      dispatch(addNodeB(nodePayload));
+      dispatch(comparisonResetPlayback());
+    }
     closeMenu();
-  }, [ctxMenu, nextNodeId, dispatch, closeMenu]);
+  }, [ctxMenu, nextNodeId, dispatch, closeMenu, source]);
 
   const doDeleteNode = useCallback(() => {
     if (ctxMenu?.type !== "node") return;
-    dispatch(removeNodeAction(ctxMenu.nodeId));
-    dispatch(resetPlayback());
+    if (source === "main") {
+      dispatch(removeNodeAction(ctxMenu.nodeId));
+      dispatch(resetPlayback());
+    } else if (source === "A") {
+      dispatch(removeNodeA(ctxMenu.nodeId));
+      dispatch(comparisonResetPlayback());
+    } else {
+      dispatch(removeNodeB(ctxMenu.nodeId));
+      dispatch(comparisonResetPlayback());
+    }
     closeMenu();
-  }, [ctxMenu, dispatch, closeMenu]);
+  }, [ctxMenu, dispatch, closeMenu, source]);
 
   const doSetStart = useCallback(() => {
     if (ctxMenu?.type !== "node") return;
-    dispatch(setStartNode(ctxMenu.nodeId));
-    dispatch(resetPlayback());
+    if (source === "main") {
+      dispatch(setStartNode(ctxMenu.nodeId));
+      dispatch(resetPlayback());
+    } else if (source === "A") {
+      dispatch(setStartNodeA(ctxMenu.nodeId));
+      dispatch(comparisonResetPlayback());
+    } else {
+      dispatch(setStartNodeB(ctxMenu.nodeId));
+      dispatch(comparisonResetPlayback());
+    }
     closeMenu();
-  }, [ctxMenu, dispatch, closeMenu]);
+  }, [ctxMenu, dispatch, closeMenu, source]);
 
   const doSetEnd = useCallback(() => {
     if (ctxMenu?.type !== "node") return;
-    dispatch(setEndNode(ctxMenu.nodeId));
-    dispatch(resetPlayback());
+    if (source === "main") {
+      dispatch(setEndNode(ctxMenu.nodeId));
+      dispatch(resetPlayback());
+    } else if (source === "A") {
+      dispatch(setEndNodeA(ctxMenu.nodeId));
+      dispatch(comparisonResetPlayback());
+    } else {
+      dispatch(setEndNodeB(ctxMenu.nodeId));
+      dispatch(comparisonResetPlayback());
+    }
     closeMenu();
-  }, [ctxMenu, dispatch, closeMenu]);
+  }, [ctxMenu, dispatch, closeMenu, source]);
 
   const doStartEdgeCreation = useCallback(() => {
     if (ctxMenu?.type !== "node") return;
@@ -367,10 +481,18 @@ export function GraphCanvas() {
 
   const doDeleteEdge = useCallback(() => {
     if (ctxMenu?.type !== "edge") return;
-    dispatch(removeEdgeAction(ctxMenu.edgeId));
-    dispatch(resetPlayback());
+    if (source === "main") {
+      dispatch(removeEdgeAction(ctxMenu.edgeId));
+      dispatch(resetPlayback());
+    } else if (source === "A") {
+      dispatch(removeEdgeA(ctxMenu.edgeId));
+      dispatch(comparisonResetPlayback());
+    } else {
+      dispatch(removeEdgeB(ctxMenu.edgeId));
+      dispatch(comparisonResetPlayback());
+    }
     closeMenu();
-  }, [ctxMenu, dispatch, closeMenu]);
+  }, [ctxMenu, dispatch, closeMenu, source]);
 
   const handleConnect = useCallback(
     (connection: Connection) => {
@@ -380,33 +502,51 @@ export function GraphCanvas() {
         (ed) => ed.source === connection.source && ed.target === connection.target
       );
       if (exists) return;
-      dispatch(addEdgeAction({
+      const edgePayload = {
         id: `e${connection.source}-${connection.target}`,
         source: connection.source,
         target: connection.target,
         weight: weighted ? Math.floor(Math.random() * 10) + 1 : 1,
-      }));
-      dispatch(resetPlayback());
+      };
+      if (source === "main") {
+        dispatch(addEdgeAction(edgePayload));
+        dispatch(resetPlayback());
+      } else if (source === "A") {
+        dispatch(addEdgeA(edgePayload));
+        dispatch(comparisonResetPlayback());
+      } else {
+        dispatch(addEdgeB(edgePayload));
+        dispatch(comparisonResetPlayback());
+      }
       if (acyclic && wouldCreateCycle(graphNodes, graphEdges, directed, connection.source, connection.target)) {
         setCycleWarning(true);
         setTimeout(() => setCycleWarning(false), 4000);
       }
     },
-    [isPlayback, graphEdges, graphNodes, directed, acyclic, weighted, dispatch]
+    [isPlayback, graphEdges, graphNodes, directed, acyclic, weighted, dispatch, source]
   );
 
   const handleNodesDelete = useCallback(
     (deleted: Node[]) => {
       if (isPlayback) return;
-      for (const nd of deleted) dispatch(removeNodeAction(nd.id));
-      dispatch(resetPlayback());
+      for (const nd of deleted) {
+        if (source === "main") {
+          dispatch(removeNodeAction(nd.id));
+        } else if (source === "A") {
+          dispatch(removeNodeA(nd.id));
+        } else {
+          dispatch(removeNodeB(nd.id));
+        }
+      }
+      if (source === "main") dispatch(resetPlayback());
+      else dispatch(comparisonResetPlayback());
     },
-    [isPlayback, dispatch]
+    [isPlayback, dispatch, source]
   );
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
-      <EmptyState />
+      <EmptyState nodesOverride={isComparison ? graphNodes : undefined} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -436,7 +576,7 @@ export function GraphCanvas() {
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#27272a" />
         <Controls
-          position="top-left"
+          position="top-right"
           className="!bg-zinc-800 !border-zinc-700 !rounded-lg [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!text-zinc-300 [&>button:hover]:!bg-zinc-700"
         />
       </ReactFlow>

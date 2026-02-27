@@ -7,36 +7,67 @@ import { AlertTriangle, Info } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setDirected, setWeighted, setAcyclic, setShowDistances } from "@/store/slices/graphSlice";
 import { resetPlayback } from "@/store/slices/algorithmSlice";
+import {
+  comparisonSetDirected,
+  comparisonSetWeighted,
+  comparisonSetAcyclic,
+  comparisonSetShowDistances,
+} from "@/store/slices/comparisonSlice";
 import { getGraphWarnings } from "@/lib/graphValidator";
 
-export function GraphSettings() {
+export type GraphSettingsSource = "main" | "comparison";
+
+interface GraphSettingsProps {
+  source?: GraphSettingsSource;
+}
+
+export function GraphSettings({ source = "main" }: GraphSettingsProps) {
   const dispatch = useAppDispatch();
-  const directed = useAppSelector((s) => s.graph.directed);
-  const weighted = useAppSelector((s) => s.graph.weighted);
-  const acyclic = useAppSelector((s) => s.graph.acyclic);
-  const showDistances = useAppSelector((s) => s.graph.showDistances);
-  const nodes = useAppSelector((s) => s.graph.nodes);
-  const edges = useAppSelector((s) => s.graph.edges);
+  const isComparison = source === "comparison";
+
+  const mainDirected = useAppSelector((s) => s.graph.directed);
+  const mainWeighted = useAppSelector((s) => s.graph.weighted);
+  const mainAcyclic = useAppSelector((s) => s.graph.acyclic);
+  const mainShowDistances = useAppSelector((s) => s.graph.showDistances);
+  const mainNodes = useAppSelector((s) => s.graph.nodes);
+  const mainEdges = useAppSelector((s) => s.graph.edges);
+
+  const compDirected = useAppSelector((s) => s.comparison.directed);
+  const compWeighted = useAppSelector((s) => s.comparison.weighted);
+  const compAcyclic = useAppSelector((s) => s.comparison.acyclic);
+  const compShowDistances = useAppSelector((s) => s.comparison.showDistances);
+  const compGraphA = useAppSelector((s) => s.comparison.graphA);
+
+  const directed = isComparison ? compDirected : mainDirected;
+  const weighted = isComparison ? compWeighted : mainWeighted;
+  const acyclic = isComparison ? compAcyclic : mainAcyclic;
+  const showDistances = isComparison ? compShowDistances : mainShowDistances;
+  const nodes = isComparison ? compGraphA.nodes : mainNodes;
+  const edges = isComparison ? compGraphA.edges : mainEdges;
 
   const warnings = useMemo(
-    () => getGraphWarnings(nodes, edges, directed, acyclic),
-    [nodes, edges, directed, acyclic],
+    () => getGraphWarnings(nodes, edges, directed, acyclic, weighted),
+    [nodes, edges, directed, acyclic, weighted],
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 min-w-0 w-full overflow-hidden">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Graph Settings
       </h3>
-      <div className="grid grid-cols-2 gap-x-10 space-y-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-4 gap-y-1 min-w-0">
         <div className="flex items-center justify-between">
           <Label htmlFor="directed" className="text-zinc-300 text-sm">Directed</Label>
           <Switch
             id="directed"
             checked={directed}
             onCheckedChange={(v) => {
-              dispatch(setDirected(v));
-              dispatch(resetPlayback());
+              if (isComparison) {
+                dispatch(comparisonSetDirected(v));
+              } else {
+                dispatch(setDirected(v));
+                dispatch(resetPlayback());
+              }
             }}
           />
         </div>
@@ -47,8 +78,12 @@ export function GraphSettings() {
             id="weighted"
             checked={weighted}
             onCheckedChange={(v) => {
-              dispatch(setWeighted(v));
-              dispatch(resetPlayback());
+              if (isComparison) {
+                dispatch(comparisonSetWeighted(v));
+              } else {
+                dispatch(setWeighted(v));
+                dispatch(resetPlayback());
+              }
             }}
           />
         </div>
@@ -59,8 +94,12 @@ export function GraphSettings() {
             id="acyclic"
             checked={acyclic}
             onCheckedChange={(v) => {
-              dispatch(setAcyclic(v));
-              dispatch(resetPlayback());
+              if (isComparison) {
+                dispatch(comparisonSetAcyclic(v));
+              } else {
+                dispatch(setAcyclic(v));
+                dispatch(resetPlayback());
+              }
             }}
           />
         </div>
@@ -71,7 +110,11 @@ export function GraphSettings() {
             id="showDistances"
             checked={showDistances}
             onCheckedChange={(v) => {
-              dispatch(setShowDistances(v));
+              if (isComparison) {
+                dispatch(comparisonSetShowDistances(v));
+              } else {
+                dispatch(setShowDistances(v));
+              }
             }}
           />
         </div>
