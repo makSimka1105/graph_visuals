@@ -131,6 +131,8 @@ export function ComparisonSidebar() {
           <ComparisonGraphCarousel />
           <Separator className="bg-zinc-800" />
           <ComparisonPlaybackControls />
+          <Separator className="bg-zinc-800" />
+          
         </div>
       </ScrollArea>
     </div>

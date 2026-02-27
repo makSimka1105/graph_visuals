@@ -20,7 +20,7 @@ export function ComparisonView() {
       <div className="relative flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
         <div className="flex-1 flex min-h-0">
           <div className="flex-1 border-r border-zinc-800 relative min-w-0">
-            <div className="absolute top-2 left-2 z-10 bg-zinc-900/90 text-zinc-300 text-xs px-2 py-1 rounded">
+            <div className="absolute top-2 right-15 z-10 bg-zinc-900/90 text-zinc-300 text-xs px-2 py-1 rounded">
               {nameA}
             </div>
             <ComparisonStepDescription source="A" />
@@ -31,7 +31,7 @@ export function ComparisonView() {
             </div>
           </div>
           <div className="flex-1 relative min-w-0">
-            <div className="absolute top-2 left-2 z-10 bg-zinc-900/90 text-zinc-300 text-xs px-2 py-1 rounded">
+            <div className="absolute top-2 right-15 z-10 bg-zinc-900/90 text-zinc-300 text-xs px-2 py-1 rounded">
               {nameB}
             </div>
             <ComparisonStepDescription source="B" />

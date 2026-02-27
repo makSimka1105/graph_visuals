@@ -85,6 +85,7 @@ export function ComparisonPlaybackControls() {
           onValueChange={handleSpeedSlider}
           className="[&_[role=slider]]:bg-zinc-300"
         />
+        <div className="y-8"></div>
       </div>
     </div>
   );
