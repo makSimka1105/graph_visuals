@@ -202,10 +202,17 @@ export function getGraphWarnings(
   }
 
   if (weighted && edges.length > 0 && hasNegativeCycle(nodes, edges, directed, weighted)) {
-    warnings.push({
-      severity: "warning",
-      message: "Graph contains a negative cycle — shortest path algorithms may fail or give incorrect results",
-    });
+    if (!directed) {
+      warnings.push({
+        severity: "warning",
+        message: "Undirected graph with negative edge: any such edge creates a negative cycle (a→b→a). Shortest paths are undefined.",
+      });
+    } else {
+      warnings.push({
+        severity: "warning",
+        message: "Graph contains a negative cycle — shortest path algorithms may fail or give incorrect results",
+      });
+    }
   }
 
   return warnings;

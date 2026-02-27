@@ -1,11 +1,13 @@
 "use client";
 
 import { useCurrentStep } from "@/store/hooks";
-import type { AuxiliaryQueue } from "@/types/graph";
+import type { AuxiliaryQueue, FloydMatrixData } from "@/types/graph";
 import { QueueBlock } from "./QueueBlock";
 import { StackBlock } from "./StackBlock";
 import { DequeBlock } from "./DequeBlock";
 import { PriorityQueueBlock } from "./PriorityQueueBlock";
+import { FloydMatrixDisplay } from "./FloydMatrixDisplay";
+
 export function AuxiliaryDisplay() {
   const { currentStep } = useCurrentStep();
   const {
@@ -19,11 +21,16 @@ export function AuxiliaryDisplay() {
   } = currentStep?.auxiliary ?? {};
 
   const hasQueues = queues && queues.length > 0;
+  const floydMatrix = currentStep?.data?.floydMatrix as FloydMatrixData | undefined;
 
-  if (!hasQueues) return null;
+  if (!hasQueues && !floydMatrix) return null;
 
   return (
-    <div className="flex flex-col-reverse items-end gap-1 min-w-0 shrink max-w-[70%] overflow-hidden">
+    <div className="flex flex-col-reverse items-end gap-2 min-w-0 shrink max-w-[70%] overflow-hidden">
+      {floydMatrix && (
+        <FloydMatrixDisplay data={floydMatrix} />
+      )}
+      {hasQueues && (
       <div className="flex flex-col gap-3 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-4 py-3 max-w-[280px] min-w-0">
         {hasQueues && queues!.map((q: AuxiliaryQueue, i: number) => {
           const isExtractStep = extractedInThisStep && currentVertexQueueIndex === i;
@@ -78,13 +85,15 @@ export function AuxiliaryDisplay() {
           return null;
         })}
       </div>
+      )}
+      {currentVertex != null && (
       <div className="flex flex-col gap-1 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 rounded-lg px-3 py-2 shrink-0 min-w-[60px]">
         <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Visiting</span>
         <span className="text-sm font-mono font-medium text-amber-400 min-h-[20px]">
-          {currentVertex ?? "-"}
+          {currentVertex}
         </span>
       </div>
-
+      )}
     </div>
   );
 }

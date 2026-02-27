@@ -67,6 +67,13 @@ export interface AuxiliaryData {
   lastAddedToQueueSide?: "left" | "right";
 }
 
+export interface FloydMatrixData {
+  matrix: number[][];
+  nodeIds: string[];
+  phaseIndex: number;
+  updatedInPhase: string[];
+}
+
 export interface AlgorithmStep {
   nodeStates: Record<string, NodeVisualState>;
   edgeStates: Record<string, EdgeVisualState>;
