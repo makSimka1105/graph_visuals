@@ -135,7 +135,7 @@ registerAlgorithm({
   name: "Greedy BFS",
   description:
     "Greedy Best-First Search: expands by Euclidean heuristic h only. " +
-    "Requires end node. Does NOT guarantee shortest path. Non-negative weights only.",
+    "Requires end node. Does NOT guarantee shortest path. Non-negative weights only. Time O((V + E) log V), space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

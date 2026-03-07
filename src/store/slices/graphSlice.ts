@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { GraphNode, GraphEdge } from "@/types/graph";
+import type { GraphNode, GraphEdge, HeuristicType } from "@/types/graph";
 
 interface GraphState {
   nodes: GraphNode[];
@@ -10,6 +10,7 @@ interface GraphState {
   showDistances: boolean;
   startNodeId: string | null;
   endNodeId: string | null;
+  heuristicType: HeuristicType;
   version: number;
   sourcePresetId: string | null;
   isModified: boolean;
@@ -24,6 +25,7 @@ const initialState: GraphState = {
   showDistances: false,
   startNodeId: null,
   endNodeId: null,
+  heuristicType: "euclidean",
   version: 0,
   sourcePresetId: null,
   isModified: false,
@@ -60,6 +62,9 @@ const graphSlice = createSlice({
     setEndNode(state, action: PayloadAction<string | null>) {
       state.endNodeId = action.payload;
     },
+    setHeuristicType(state, action: PayloadAction<HeuristicType>) {
+      state.heuristicType = action.payload;
+    },
     addNode(state, action: PayloadAction<GraphNode>) {
       state.nodes.push(action.payload);
       state.isModified = true;
@@ -95,6 +100,22 @@ const graphSlice = createSlice({
       }
       state.isModified = true;
     },
+    recalculateWeightsByGeometry(state) {
+      const posMap = new Map<string, { x: number; y: number }>();
+      for (const n of state.nodes) {
+        posMap.set(n.id, { x: n.x ?? 0, y: n.y ?? 0 });
+      }
+      const SCALE = 0.01;
+      for (const e of state.edges) {
+        const a = posMap.get(e.source) ?? { x: 0, y: 0 };
+        const b = posMap.get(e.target) ?? { x: 0, y: 0 };
+        const dist = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2) * SCALE;
+        e.weight = Math.max(1, Math.round(dist * 10));
+      }
+      state.weighted = true;
+      state.isModified = true;
+      state.version += 1;
+    },
   },
 });
 
@@ -106,12 +127,14 @@ export const {
   setShowDistances,
   setStartNode,
   setEndNode,
+  setHeuristicType,
   addNode,
   removeNode,
   addEdge,
   removeEdge,
   updateEdgeWeight,
   updateNodePositions,
+  recalculateWeightsByGeometry,
 } = graphSlice.actions;
 
 export default graphSlice.reducer;

@@ -10,3 +10,6 @@ import "./astar";
 import "./greedyBfs";
 import "./bidirectionalDijkstra";
 import "./bidirectionalAstar";
+import "./kosaraju";
+import "./prim";
+import "./kruskal";

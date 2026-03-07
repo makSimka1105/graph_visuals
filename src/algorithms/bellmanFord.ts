@@ -31,7 +31,7 @@ function bellmanFordRun(graph: Graph, startNode: string, endNode?: string): Algo
         updated = true;
         edgeStates[edgeId] = "current";
         nodeStates[target] = "current";
-        pushStep(`Relax ${source} -> ${target} (weight ${weight}). New distance: ${newDist}.`);
+        pushStep(`Relax ${source} - > ${target} (weight ${weight}). New distance: ${newDist}.`);
         edgeStates[edgeId] = "traversed";
         nodeStates[target] = "visited";
       }
@@ -47,7 +47,7 @@ function bellmanFordRun(graph: Graph, startNode: string, endNode?: string): Algo
     const srcDist = dist[source] ?? Infinity;
     if (srcDist === Infinity) continue;
     if (srcDist + weight < (dist[target] ?? Infinity)) {
-      pushStep(`Negative weight cycle detected via edge ${source} -> ${target}!`);
+      pushStep(`Negative weight cycle detected via edge ${source} - > ${target}!`);
       return steps;
     }
   }
@@ -75,7 +75,7 @@ registerAlgorithm({
   name: "Bellman-Ford",
   description:
     "Bellman-Ford: finds shortest path with negative edge weights. Detects negative cycles. " +
-    "Works on directed and undirected. O(V * E).",
+    "Works on directed and undirected. Time O(V * E), space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

@@ -55,7 +55,7 @@ export function PlaybackButtons({
       : "flex items-center justify-center gap-2";
 
   return (
-    <div className={`${containerClass} ${className}`}>
+    <div className={`${containerClass} ${className} select-none`}>
       <Button
         variant={btnVariant}
         size={size}

@@ -59,7 +59,7 @@ function desopoPapeRun(graph: Graph, startNode: string, endNode?: string): Algor
           m[v] = 1;
           deque.push({ nodeId: v, fromFront: false });
           nodeStates[v] = "inQueue";
-          pushStep(`${u} -> ${v} (w=${weight}): first visit, dist=${newDist}. Push to back of deque (M2->M1).`, {
+          pushStep(`${u} - > ${v} (w=${weight}): first visit, dist=${newDist}. Push to back of deque (M2- >M1).`, {
             auxiliary: {
               queues: [{ items: deque.map((x) => x.nodeId), itemsWithSource: [...deque], type: "deque", label: "Deque" }],
               currentVertex: u,
@@ -71,7 +71,7 @@ function desopoPapeRun(graph: Graph, startNode: string, endNode?: string): Algor
           m[v] = 1;
           deque.unshift({ nodeId: v, fromFront: true });
           nodeStates[v] = "inQueue";
-          pushStep(`${u} -> ${v} (w=${weight}): re-relaxed, dist=${newDist}. Push to front of deque (M0->M1).`, {
+          pushStep(`${u} - > ${v} (w=${weight}): re-relaxed, dist=${newDist}. Push to front of deque (M0- >M1).`, {
             auxiliary: {
               queues: [{ items: deque.map((x) => x.nodeId), itemsWithSource: [...deque], type: "deque", label: "Deque" }],
               currentVertex: u,
@@ -80,7 +80,7 @@ function desopoPapeRun(graph: Graph, startNode: string, endNode?: string): Algor
             },
           });
         } else {
-          pushStep(`${u} -> ${v} (w=${weight}): update dist=${newDist}. Already in deque (M1).`, {
+          pushStep(`${u} - > ${v} (w=${weight}): update dist=${newDist}. Already in deque (M1).`, {
             auxiliary: {
               queues: [{ items: deque.map((x) => x.nodeId), itemsWithSource: [...deque], type: "deque", label: "Deque" }],
               currentVertex: u,
@@ -119,7 +119,7 @@ registerAlgorithm({
     "D'Esopo-Pape: deque-based SSSP using M0/M1/M2 vertex classification. " +
     "Handles negative weights. Aborts on possible negative cycle (iteration limit). " +
     "Average case faster than Dijkstra and Bellman-Ford, but worst case exponential. " +
-    "Works on directed and undirected weighted graphs.",
+    "Works on directed and undirected weighted graphs. Time O(2^V) worst, O(V + E) average; space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

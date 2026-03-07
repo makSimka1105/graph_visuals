@@ -65,18 +65,18 @@ function levitRun(graph: Graph, startNode: string, endNode?: string): AlgorithmS
           m[v] = 1;
           normal.push(v);
           nodeStates[v] = "inQueue";
-          pushStep(`${u} -> ${v} (w=${weight}): first visit, dist=${newDist}. Add to normal queue (M2->M1).`, {
+          pushStep(`${u} - > ${v} (w=${weight}): first visit, dist=${newDist}. Add to normal queue (M2- >M1).`, {
             auxiliary: buildAuxiliary({ currentVertex: u, lastAddedToQueue: v, lastAddedToQueueIndex: 1 }),
           });
         } else if (setV === 0) {
           m[v] = 1;
           urgent.push(v);
           nodeStates[v] = "inQueue";
-          pushStep(`${u} -> ${v} (w=${weight}): re-relaxed, dist=${newDist}. Add to urgent queue (M0->M1).`, {
+          pushStep(`${u} - > ${v} (w=${weight}): re-relaxed, dist=${newDist}. Add to urgent queue (M0- >M1).`, {
             auxiliary: buildAuxiliary({ currentVertex: u, lastAddedToQueue: v, lastAddedToQueueIndex: 0 }),
           });
         } else {
-          pushStep(`${u} -> ${v} (w=${weight}): update dist=${newDist}. Already queued (M1).`, {
+          pushStep(`${u} - > ${v} (w=${weight}): update dist=${newDist}. Already queued (M1).`, {
             auxiliary: buildAuxiliary({ currentVertex: u }),
           });
         }
@@ -111,7 +111,7 @@ registerAlgorithm({
   description:
     "Levit: dual-queue modification of D'Esopo-Pape. Splits work into urgent (re-relaxed, processed first) " +
     "and normal (new discoveries). Handles negative weights. Aborts on possible negative cycle (iteration limit). " +
-    "Works on directed and undirected weighted graphs.",
+    "Works on directed and undirected weighted graphs. Time O(V * E), space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

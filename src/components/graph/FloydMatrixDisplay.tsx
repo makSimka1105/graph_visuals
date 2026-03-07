@@ -30,11 +30,6 @@ export function FloydMatrixDisplay({ data }: FloydMatrixDisplayProps) {
             {phaseIndex >= 0 ? `Phase k = ${nodeIds[phaseIndex]} (${phaseIndex + 1}/${n})` : "Initial"}
           </span>
         </div>
-        {showPhaseHighlight && (
-          <p className="text-[9px] text-zinc-500">
-            Checking all pairs (i,j): dist(i,j) = min(dist(i,j), dist(i,k) + dist(k,j)). Order: k=0..n−1 (fixed).
-          </p>
-        )}
       </div>
 
       <div className="overflow-x-auto">

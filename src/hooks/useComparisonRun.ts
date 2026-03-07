@@ -23,6 +23,8 @@ export function useComparisonRun() {
   const algA = comp.algA ? getAlgorithm(comp.algA) : null;
   const algB = comp.algB ? getAlgorithm(comp.algB) : null;
 
+  const heuristicTypeA = comp.graphA.heuristicType ?? "euclidean";
+  const heuristicTypeB = comp.graphB.heuristicType ?? "euclidean";
   const compatA = useMemo(
     () =>
       algA
@@ -32,9 +34,12 @@ export function useComparisonRun() {
             acyclic: comp.acyclic,
             nodes: comp.graphA.nodes,
             edges: comp.graphA.edges,
+            heuristicType: heuristicTypeA,
+            startNodeId: comp.graphA.startNodeId,
+            endNodeId: comp.graphA.endNodeId,
           })
         : null,
-    [algA, comp.directed, comp.weighted, comp.acyclic, comp.graphA.nodes, comp.graphA.edges]
+    [algA, comp.directed, comp.weighted, comp.acyclic, comp.graphA.nodes, comp.graphA.edges, comp.graphA.startNodeId, comp.graphA.endNodeId, heuristicTypeA]
   );
   const compatB = useMemo(
     () =>
@@ -45,55 +50,55 @@ export function useComparisonRun() {
             acyclic: comp.acyclic,
             nodes: comp.graphB.nodes,
             edges: comp.graphB.edges,
+            heuristicType: heuristicTypeB,
+            startNodeId: comp.graphB.startNodeId,
+            endNodeId: comp.graphB.endNodeId,
           })
         : null,
-    [algB, comp.directed, comp.weighted, comp.acyclic, comp.graphB.nodes, comp.graphB.edges]
+    [algB, comp.directed, comp.weighted, comp.acyclic, comp.graphB.nodes, comp.graphB.edges, comp.graphB.startNodeId, comp.graphB.endNodeId, heuristicTypeB]
   );
 
   const validation = useMemo(() => {
     const errors: string[] = [];
     if (comp.graphA.nodes.length === 0) errors.push("Load graph A");
     if (comp.graphB.nodes.length === 0) errors.push("Load graph B");
-    if (!comp.graphA.startNodeId && comp.graphA.nodes.length > 0) errors.push("Select start node in graph A");
-    if (!comp.graphB.startNodeId && comp.graphB.nodes.length > 0) errors.push("Select start node in graph B");
     if (!comp.algA) errors.push("Select algorithm A");
     if (!comp.algB) errors.push("Select algorithm B");
-    if (algA?.requiresEndNode && !comp.graphA.endNodeId) errors.push("Algorithm A requires end node");
-    if (algB?.requiresEndNode && !comp.graphB.endNodeId) errors.push("Algorithm B requires end node");
-    if (comp.graphA.startNodeId === comp.graphA.endNodeId && comp.graphA.startNodeId != null)
-      errors.push("Graph A: start and end must differ");
-    if (comp.graphB.startNodeId === comp.graphB.endNodeId && comp.graphB.startNodeId != null)
-      errors.push("Graph B: start and end must differ");
     if (compatA?.ok === false)
       errors.push(`A: ${compatA.warnings.find((w) => w.severity === "error")?.message ?? "incompatible"}`);
     if (compatB?.ok === false)
       errors.push(`B: ${compatB.warnings.find((w) => w.severity === "error")?.message ?? "incompatible"}`);
     return errors;
-  }, [comp, algA, algB, compatA, compatB]);
+  }, [comp, compatA, compatB]);
 
   const canRun = validation.length === 0;
 
   const handleRun = () => {
     if (!canRun || !comp.algA || !comp.algB || !algA || !algB) return;
-    if (!comp.graphA.startNodeId || !comp.graphB.startNodeId) return;
+    const startNodeA = algA.requiresStartNode !== false ? (comp.graphA.startNodeId ?? comp.graphA.nodes[0]?.id ?? "") : "";
+    const startNodeB = algB.requiresStartNode !== false ? (comp.graphB.startNodeId ?? comp.graphB.nodes[0]?.id ?? "") : "";
+    if (algA.requiresStartNode !== false && !startNodeA) return;
+    if (algB.requiresStartNode !== false && !startNodeB) return;
 
     const graphA = {
       nodes: comp.graphA.nodes,
       edges: comp.graphA.edges,
       directed: comp.directed,
       weighted: comp.weighted,
+      heuristicType: comp.graphA.heuristicType ?? "euclidean",
     };
     const graphB = {
       nodes: comp.graphB.nodes,
       edges: comp.graphB.edges,
       directed: comp.directed,
       weighted: comp.weighted,
+      heuristicType: comp.graphB.heuristicType ?? "euclidean",
     };
 
     const startA = performance.now();
     const resA = algA.run(
       graphA as Parameters<typeof algA.run>[0],
-      comp.graphA.startNodeId,
+      startNodeA,
       comp.graphA.endNodeId ?? undefined
     );
     const timeA = performance.now() - startA;
@@ -101,7 +106,7 @@ export function useComparisonRun() {
     const startB = performance.now();
     const resB = algB.run(
       graphB as Parameters<typeof algB.run>[0],
-      comp.graphB.startNodeId,
+      startNodeB,
       comp.graphB.endNodeId ?? undefined
     );
     const timeB = performance.now() - startB;

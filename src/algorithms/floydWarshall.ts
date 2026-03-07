@@ -127,11 +127,11 @@ function floydWarshallRun(graph: Graph, startNode: string, endNode?: string): Al
       const path = reconstructPathFromMatrix(next, edgeIdMap, si, ei, nodeIds);
       if (path) {
         applyPathToStates(path, nodeStates, edgeStates);
-        pushStep(`Shortest path ${startNode} -> ${endNode}: distance ${totalDist}.`, {
+        pushStep(`Shortest path ${startNode} - > ${endNode}: distance ${totalDist}.`, {
           data: { ...finalMatrixData, pathNodeIds: path.nodes },
         });
       } else {
-        pushStep(`Shortest path ${startNode} -> ${endNode}: distance ${totalDist} (path reconstruction failed).`, {
+        pushStep(`Shortest path ${startNode} - > ${endNode}: distance ${totalDist} (path reconstruction failed).`, {
           data: finalMatrixData,
         });
       }
@@ -157,7 +157,7 @@ registerAlgorithm({
   name: "Floyd-Warshall",
   description:
     "Floyd-Warshall: computes shortest paths between ALL pairs. Handles negative weights " +
-    "(undefined with negative cycles). O(V³).",
+    "(undefined with negative cycles). Time O(V³), space O(V²).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

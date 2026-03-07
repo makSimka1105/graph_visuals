@@ -9,132 +9,91 @@ import {
   useEdgesState,
   type Node,
   type Edge,
-  type NodeChange,
   type ReactFlowInstance,
-  type Connection,
   BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  Plus,
-  Trash2,
-  Play as PlayIcon,
-  Flag,
-  Link,
-  Hash,
-} from "lucide-react";
 
-import { useAppSelector, useAppDispatch, useCurrentStep } from "@/store/hooks";
+import { useAppDispatch } from "@/store/hooks";
+import { CustomNode } from "./CustomNode";
+import { CustomEdge } from "./CustomEdge";
+import { EmptyState } from "./EmptyState";
 import {
-  updateNodePositions,
-  addNode as addNodeAction,
-  removeNode as removeNodeAction,
-  addEdge as addEdgeAction,
-  removeEdge as removeEdgeAction,
-  updateEdgeWeight,
-  setStartNode,
-  setEndNode,
-} from "@/store/slices/graphSlice";
-import { resetPlayback } from "@/store/slices/algorithmSlice";
-import {
-  updateNodePositionsA,
-  updateNodePositionsB,
-  addNodeA,
-  addNodeB,
-  removeNodeA,
-  removeNodeB,
-  addEdgeA,
-  addEdgeB,
-  removeEdgeA,
-  removeEdgeB,
-  updateEdgeWeightA,
-  updateEdgeWeightB,
-  setStartNodeA,
-  setEndNodeA,
-  setStartNodeB,
-  setEndNodeB,
-  comparisonResetPlayback,
-} from "@/store/slices/comparisonSlice";
-import { wouldCreateCycle } from "@/lib/graphValidator";
+  ContextMenuOverlay,
+  EdgeWeightEditorOverlay,
+  CanvasHintsOverlay,
+  EdgeCreationBanner,
+  CycleWarningBanner,
+} from "./overlays";
+import { createGraphCanvasActions } from "@/lib/graphCanvasActions";
+import { useGraphCanvasStoreData } from "@/hooks/useGraphCanvasData";
+import { useGraphFlowElements } from "@/hooks/useGraphFlowElements";
+import { useGraphGestures, type ContextMenu } from "@/hooks/useGraphGestures";
+
+const nodeTypes = { custom: CustomNode };
+const edgeTypes = { custom: CustomEdge };
 
 export type GraphCanvasSource = "main" | "A" | "B";
 
 interface GraphCanvasProps {
   source?: GraphCanvasSource;
 }
-import { CustomNode } from "./CustomNode";
-import { CustomEdge } from "./CustomEdge";
-import { EmptyState } from "./EmptyState";
-
-const nodeTypes = { custom: CustomNode };
-const edgeTypes = { custom: CustomEdge };
-
-type CtxMenu =
-  | { type: "pane"; screenX: number; screenY: number; flowX: number; flowY: number }
-  | { type: "node"; screenX: number; screenY: number; nodeId: string }
-  | { type: "edge"; screenX: number; screenY: number; edgeId: string }
-  | null;
 
 export function GraphCanvas({ source = "main" }: GraphCanvasProps) {
   const dispatch = useAppDispatch();
-  const isComparison = source !== "main";
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const mainGraph = useAppSelector((state) => state.graph);
-  const compState = useAppSelector((state) => state.comparison);
-  const { steps: mainSteps, currentStep: mainCurrentStep } = useCurrentStep();
-
-  const graphNodes = isComparison
-    ? source === "A"
-      ? compState.graphA.nodes
-      : compState.graphB.nodes
-    : mainGraph.nodes;
-  const graphEdges = isComparison
-    ? source === "A"
-      ? compState.graphA.edges
-      : compState.graphB.edges
-    : mainGraph.edges;
-  const directed = isComparison ? compState.directed : mainGraph.directed;
-  const weighted = isComparison ? compState.weighted : mainGraph.weighted;
-  const startNodeId = isComparison
-    ? source === "A"
-      ? compState.graphA.startNodeId
-      : compState.graphB.startNodeId
-    : mainGraph.startNodeId;
-  const endNodeId = isComparison
-    ? source === "A"
-      ? compState.graphA.endNodeId
-      : compState.graphB.endNodeId
-    : mainGraph.endNodeId;
-  const showDistances = isComparison ? compState.showDistances : mainGraph.showDistances;
-  const acyclic = isComparison ? compState.acyclic : mainGraph.acyclic;
-  const graphVersion = isComparison
-    ? source === "A"
-      ? compState.graphA.version
-      : compState.graphB.version
-    : mainGraph.version;
-
-  const steps = isComparison
-    ? source === "A"
-      ? compState.stepsA
-      : compState.stepsB
-    : mainSteps;
-  const compStepIndex = compState.currentStepIndex;
-  const currentStep = isComparison
-    ? steps.length > 0 && compStepIndex >= 0
-      ? steps[Math.min(compStepIndex, steps.length - 1)] ?? null
-      : null
-    : mainCurrentStep;
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [ctxMenu, setCtxMenu] = useState<CtxMenu>(null);
   const [edgeSourceId, setEdgeSourceId] = useState<string | null>(null);
   const [cycleWarning, setCycleWarning] = useState(false);
-  const [editingEdge, setEditingEdge] = useState<{ edgeId: string; weight: number; weightInput: string; x: number; y: number } | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const lastPaneClickRef = useRef<{ time: number; x: number; y: number } | null>(null);
-  const DBL_CLICK_MS = 400;
-  const DBL_CLICK_DIST = 10;
+  const [editingEdge, setEditingEdge] = useState<{
+    edgeId: string;
+    weight: number;
+    weightInput: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [ctxMenu, setCtxMenu] = useState<ContextMenu>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  const actions = useMemo(() => createGraphCanvasActions(dispatch, source), [dispatch, source]);
+  const storeData = useGraphCanvasStoreData(source);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  const closeMenu = useCallback(() => setCtxMenu(null), []);
+
+  const gestureHandlers = useGraphGestures({
+    rfInstance,
+    actions,
+    storeData,
+    source,
+    selectedNodeId,
+    setSelectedNodeId,
+    edgeSourceId,
+    setEdgeSourceId,
+    ctxMenu,
+    setCtxMenu,
+    setEditingEdge,
+    setCycleWarning,
+    containerRef,
+    closeMenu,
+    onNodesChange,
+  });
+
+  const { flowNodes, flowEdges } = useGraphFlowElements({
+    storeData,
+    selectedNodeId,
+    edgeSourceId,
+    isTouchDevice,
+    onEdgeClick: gestureHandlers.handleEdgeClick,
+  });
+
+  useEffect(() => setNodes(flowNodes), [flowNodes, setNodes]);
+  useEffect(() => setEdges(flowEdges), [flowEdges, setEdges]);
+
   useEffect(() => {
     const check = () => setIsTouchDevice(window.matchMedia("(pointer: coarse)").matches);
     check();
@@ -142,11 +101,6 @@ export function GraphCanvas({ source = "main" }: GraphCanvasProps) {
     mq.addEventListener("change", check);
     return () => mq.removeEventListener("change", check);
   }, []);
-
-  const isPlayback = steps.length > 0;
-  const stepForDistances = currentStep ?? (steps.length > 0 ? steps[0] : null);
-
-  const closeMenu = useCallback(() => setCtxMenu(null), []);
 
   useEffect(() => {
     if (!ctxMenu) return;
@@ -162,409 +116,38 @@ export function GraphCanvas({ source = "main" }: GraphCanvasProps) {
     return () => window.removeEventListener("click", handler);
   }, [editingEdge]);
 
-  const pathNodeIds = currentStep?.data?.pathNodeIds as string[] | undefined;
-
-  const openEdgeMenu = useCallback(
-    (event: React.MouseEvent, edgeId: string) => {
-      if (isPlayback || edgeSourceId) return;
-      event.stopPropagation();
-      setEditingEdge(null);
-      setCtxMenu({ type: "edge", screenX: event.clientX, screenY: event.clientY, edgeId });
-    },
-    [isPlayback, edgeSourceId]
-  );
-
-  const handleEdgeClick = useCallback(
-    (event: React.MouseEvent, edge: Edge) => {
-      openEdgeMenu(event, edge.id);
-    },
-    [openEdgeMenu]
-  );
-
-  const handleEdgeDoubleClick = useCallback(
-    (event: React.MouseEvent, edge: Edge) => {
-      openEdgeMenu(event, edge.id);
-    },
-    [openEdgeMenu]
-  );
-
-  const flowNodes: Node[] = useMemo(() => {
-    return graphNodes.map((n) => {
-      let visualState = currentStep?.nodeStates[n.id] ?? "default";
-      if (pathNodeIds?.includes(n.id)) visualState = "path";
-      else if (visualState === "default" && n.id === startNodeId) visualState = "start";
-      else if (visualState === "default" && n.id === endNodeId) visualState = "end";
-      const distance = showDistances ? stepForDistances?.distances?.[n.id] : undefined;
-      return {
-        id: n.id,
-        type: "custom",
-        position: { x: n.x ?? 0, y: n.y ?? 0 },
-        data: { label: n.label, visualState, isEdgeSource: n.id === edgeSourceId, distance },
-      };
-    });
-  }, [graphNodes, currentStep, stepForDistances, startNodeId, endNodeId, edgeSourceId, pathNodeIds, showDistances]);
-
-  const flowEdges: Edge[] = useMemo(() => {
-    const overrides = currentStep?.edgeWeightOverrides;
-    return graphEdges.map((e) => {
-      const w = overrides?.[e.id] ?? e.weight ?? 1;
-      const edge = { id: e.id, source: e.source, target: e.target } as Edge;
-      return {
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        type: "custom",
-        markerEnd: undefined,
-        data: {
-          weight: (weighted || overrides) ? w : undefined,
-          visualState: currentStep?.edgeStates[e.id] ?? "default",
-          directed,
-          selectedNodeId,
-          onEdgeClick: isTouchDevice ? undefined : (ev: React.MouseEvent) => handleEdgeClick(ev, edge),
-        },
-      };
-    });
-  }, [graphEdges, directed, weighted, currentStep, selectedNodeId, handleEdgeClick, isTouchDevice]);
-
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-
-  useEffect(() => { setNodes(flowNodes); }, [flowNodes, setNodes]);
-  useEffect(() => { setEdges(flowEdges); }, [flowEdges, setEdges]);
-
   useEffect(() => {
-    if (!rfInstance) return;
-    if (graphNodes.length > 0) {
-      const timer = setTimeout(() => {
-        rfInstance.fitView({ padding: 0.12, duration: 300 });
-      }, 80);
-      return () => clearTimeout(timer);
-    }
-  }, [graphVersion, graphNodes.length, rfInstance]);
+    if (!rfInstance || storeData.graphNodes.length === 0) return;
+    const timer = setTimeout(() => {
+      rfInstance.fitView({ padding: 0.12, duration: 300 });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [storeData.graphVersion, rfInstance]);
 
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      onNodesChange(changes);
-      const positionChanges = changes
-        .filter(
-          (c): c is NodeChange & { type: "position"; position: { x: number; y: number }; dragging: boolean } =>
-            c.type === "position" &&
-            "dragging" in c &&
-            !(c as { dragging?: boolean }).dragging &&
-            "position" in c
-        )
-        .map((c) => ({ id: c.id, x: c.position.x, y: c.position.y }));
-      if (positionChanges.length > 0) {
-        if (source === "main") dispatch(updateNodePositions(positionChanges));
-        else if (source === "A") dispatch(updateNodePositionsA(positionChanges));
-        else dispatch(updateNodePositionsB(positionChanges));
-      }
-    },
-    [onNodesChange, dispatch, source]
-  );
-
-  const nextNodeId = useCallback(() => {
-    const maxId = graphNodes.reduce((m, nd) => Math.max(m, parseInt(nd.id) || 0), -1);
-    return String(maxId + 1);
-  }, [graphNodes]);
-
-  const handleNodeClick = useCallback(
-    (_: React.MouseEvent, node: Node) => {
-      if (edgeSourceId) {
-        if (edgeSourceId !== node.id) {
-          const exists = graphEdges.some(
-            (ed) => ed.source === edgeSourceId && ed.target === node.id
-          );
-          if (!exists) {
-            const edgePayload = {
-              id: `e${edgeSourceId}-${node.id}`,
-              source: edgeSourceId,
-              target: node.id,
-              weight: weighted ? Math.floor(Math.random() * 10) + 1 : 1,
-            };
-            if (source === "main") {
-              dispatch(addEdgeAction(edgePayload));
-              dispatch(resetPlayback());
-            } else if (source === "A") {
-              dispatch(addEdgeA(edgePayload));
-              dispatch(comparisonResetPlayback());
-            } else {
-              dispatch(addEdgeB(edgePayload));
-              dispatch(comparisonResetPlayback());
-            }
-            if (acyclic && wouldCreateCycle(graphNodes, graphEdges, directed, edgeSourceId, node.id)) {
-              setCycleWarning(true);
-              setTimeout(() => setCycleWarning(false), 4000);
-            }
-          }
-        }
-        setEdgeSourceId(null);
-        return;
-      }
-      setSelectedNodeId(node.id);
-    },
-    [edgeSourceId, graphEdges, graphNodes, directed, acyclic, weighted, dispatch, source]
-  );
-
-  const handlePaneClick = useCallback(
-    (event: React.MouseEvent) => {
-      const now = Date.now();
-      const prev = lastPaneClickRef.current;
-      const isDoubleClick =
-        prev &&
-        now - prev.time < DBL_CLICK_MS &&
-        Math.abs(event.clientX - prev.x) < DBL_CLICK_DIST &&
-        Math.abs(event.clientY - prev.y) < DBL_CLICK_DIST;
-
-      if (isDoubleClick) {
-        lastPaneClickRef.current = null;
-        if (isPlayback || !rfInstance) return;
-        const pos = rfInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-        setCtxMenu({ type: "pane", screenX: event.clientX, screenY: event.clientY, flowX: pos.x, flowY: pos.y });
-      } else {
-        lastPaneClickRef.current = { time: now, x: event.clientX, y: event.clientY };
-        setSelectedNodeId(null);
-        if (edgeSourceId) setEdgeSourceId(null);
-        setEditingEdge(null);
-      }
-    },
-    [edgeSourceId, isPlayback, rfInstance]
-  );
-
-  const handlePaneContextMenu = useCallback(
-    (event: MouseEvent | React.MouseEvent) => {
-      event.preventDefault();
-      if (isPlayback || !rfInstance) return;
-      const pos = rfInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      setCtxMenu({ type: "pane", screenX: event.clientX, screenY: event.clientY, flowX: pos.x, flowY: pos.y });
-    },
-    [isPlayback, rfInstance]
-  );
-
-  const handleNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      event.preventDefault();
-      if (isPlayback) return;
-      setCtxMenu({ type: "node", screenX: event.clientX, screenY: event.clientY, nodeId: node.id });
-    },
-    [isPlayback]
-  );
-
-  const handleEdgeContextMenu = useCallback(
-    (event: React.MouseEvent, edge: Edge) => {
-      event.preventDefault();
-      if (isPlayback) return;
-      setEditingEdge(null);
-      setCtxMenu({ type: "edge", screenX: event.clientX, screenY: event.clientY, edgeId: edge.id });
-    },
-    [isPlayback]
-  );
-
-  const handleNodeDoubleClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      event.preventDefault();
-      if (isPlayback) return;
-      setCtxMenu({ type: "node", screenX: event.clientX, screenY: event.clientY, nodeId: node.id });
-    },
-    [isPlayback]
-  );
-
-  const handleApplyEdgeWeight = useCallback(() => {
-    if (!editingEdge) return;
-    const parsed = parseFloat(editingEdge.weightInput);
-    const w = Number.isNaN(parsed) ? editingEdge.weight : parsed;
-    const payload = { id: editingEdge.edgeId, weight: w };
-    if (source === "main") {
-      dispatch(updateEdgeWeight(payload));
-      dispatch(resetPlayback());
-    } else if (source === "A") {
-      dispatch(updateEdgeWeightA(payload));
-      dispatch(comparisonResetPlayback());
-    } else {
-      dispatch(updateEdgeWeightB(payload));
-      dispatch(comparisonResetPlayback());
-    }
-    setEditingEdge(null);
-  }, [editingEdge, dispatch, source]);
-
-  const handleEditingEdgeKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") handleApplyEdgeWeight();
-      if (e.key === "Escape") setEditingEdge(null);
-    },
-    [handleApplyEdgeWeight]
-  );
-
-  const doAddNode = useCallback(() => {
-    if (ctxMenu?.type !== "pane") return;
-    const id = nextNodeId();
-    const nodePayload = { id, label: id, x: ctxMenu.flowX, y: ctxMenu.flowY };
-    if (source === "main") {
-      dispatch(addNodeAction(nodePayload));
-      dispatch(resetPlayback());
-    } else if (source === "A") {
-      dispatch(addNodeA(nodePayload));
-      dispatch(comparisonResetPlayback());
-    } else {
-      dispatch(addNodeB(nodePayload));
-      dispatch(comparisonResetPlayback());
-    }
-    closeMenu();
-  }, [ctxMenu, nextNodeId, dispatch, closeMenu, source]);
-
-  const doDeleteNode = useCallback(() => {
-    if (ctxMenu?.type !== "node") return;
-    if (source === "main") {
-      dispatch(removeNodeAction(ctxMenu.nodeId));
-      dispatch(resetPlayback());
-    } else if (source === "A") {
-      dispatch(removeNodeA(ctxMenu.nodeId));
-      dispatch(comparisonResetPlayback());
-    } else {
-      dispatch(removeNodeB(ctxMenu.nodeId));
-      dispatch(comparisonResetPlayback());
-    }
-    closeMenu();
-  }, [ctxMenu, dispatch, closeMenu, source]);
-
-  const doSetStart = useCallback(() => {
-    if (ctxMenu?.type !== "node") return;
-    if (source === "main") {
-      dispatch(setStartNode(ctxMenu.nodeId));
-      dispatch(resetPlayback());
-    } else if (source === "A") {
-      dispatch(setStartNodeA(ctxMenu.nodeId));
-      dispatch(comparisonResetPlayback());
-    } else {
-      dispatch(setStartNodeB(ctxMenu.nodeId));
-      dispatch(comparisonResetPlayback());
-    }
-    closeMenu();
-  }, [ctxMenu, dispatch, closeMenu, source]);
-
-  const doSetEnd = useCallback(() => {
-    if (ctxMenu?.type !== "node") return;
-    if (source === "main") {
-      dispatch(setEndNode(ctxMenu.nodeId));
-      dispatch(resetPlayback());
-    } else if (source === "A") {
-      dispatch(setEndNodeA(ctxMenu.nodeId));
-      dispatch(comparisonResetPlayback());
-    } else {
-      dispatch(setEndNodeB(ctxMenu.nodeId));
-      dispatch(comparisonResetPlayback());
-    }
-    closeMenu();
-  }, [ctxMenu, dispatch, closeMenu, source]);
-
-  const doStartEdgeCreation = useCallback(() => {
-    if (ctxMenu?.type !== "node") return;
-    setEdgeSourceId(ctxMenu.nodeId);
-    closeMenu();
-  }, [ctxMenu, closeMenu]);
-
-  const doOpenWeightEditor = useCallback(() => {
-    if (ctxMenu?.type !== "edge") return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const edgeData = graphEdges.find((e) => e.id === ctxMenu.edgeId);
-    const currentWeight = edgeData?.weight ?? 1;
-    setEditingEdge({
-      edgeId: ctxMenu.edgeId,
-      weight: currentWeight,
-      weightInput: String(currentWeight),
-      x: ctxMenu.screenX - rect.left,
-      y: ctxMenu.screenY - rect.top,
-    });
-    closeMenu();
-  }, [ctxMenu, graphEdges, closeMenu]);
-
-  const doDeleteEdge = useCallback(() => {
-    if (ctxMenu?.type !== "edge") return;
-    if (source === "main") {
-      dispatch(removeEdgeAction(ctxMenu.edgeId));
-      dispatch(resetPlayback());
-    } else if (source === "A") {
-      dispatch(removeEdgeA(ctxMenu.edgeId));
-      dispatch(comparisonResetPlayback());
-    } else {
-      dispatch(removeEdgeB(ctxMenu.edgeId));
-      dispatch(comparisonResetPlayback());
-    }
-    closeMenu();
-  }, [ctxMenu, dispatch, closeMenu, source]);
-
-  const handleConnect = useCallback(
-    (connection: Connection) => {
-      if (isPlayback) return;
-      if (!connection.source || !connection.target || connection.source === connection.target) return;
-      const exists = graphEdges.some(
-        (ed) => ed.source === connection.source && ed.target === connection.target
-      );
-      if (exists) return;
-      const edgePayload = {
-        id: `e${connection.source}-${connection.target}`,
-        source: connection.source,
-        target: connection.target,
-        weight: weighted ? Math.floor(Math.random() * 10) + 1 : 1,
-      };
-      if (source === "main") {
-        dispatch(addEdgeAction(edgePayload));
-        dispatch(resetPlayback());
-      } else if (source === "A") {
-        dispatch(addEdgeA(edgePayload));
-        dispatch(comparisonResetPlayback());
-      } else {
-        dispatch(addEdgeB(edgePayload));
-        dispatch(comparisonResetPlayback());
-      }
-      if (acyclic && wouldCreateCycle(graphNodes, graphEdges, directed, connection.source, connection.target)) {
-        setCycleWarning(true);
-        setTimeout(() => setCycleWarning(false), 4000);
-      }
-    },
-    [isPlayback, graphEdges, graphNodes, directed, acyclic, weighted, dispatch, source]
-  );
-
-  const handleNodesDelete = useCallback(
-    (deleted: Node[]) => {
-      if (isPlayback) return;
-      for (const nd of deleted) {
-        if (source === "main") {
-          dispatch(removeNodeAction(nd.id));
-        } else if (source === "A") {
-          dispatch(removeNodeA(nd.id));
-        } else {
-          dispatch(removeNodeB(nd.id));
-        }
-      }
-      if (source === "main") dispatch(resetPlayback());
-      else dispatch(comparisonResetPlayback());
-    },
-    [isPlayback, dispatch, source]
-  );
+  const isComparison = source !== "main";
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
-      <EmptyState nodesOverride={isComparison ? graphNodes : undefined} />
+      <EmptyState nodesOverride={isComparison ? storeData.graphNodes : undefined} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodesDraggable={!isPlayback}
-        onNodesChange={handleNodesChange}
+        nodesDraggable={!storeData.isPlayback}
+        onNodesChange={gestureHandlers.handleNodesChange}
         onEdgesChange={onEdgesChange}
         onInit={setRfInstance}
-        onNodeClick={handleNodeClick}
-        onPaneClick={handlePaneClick}
-        onEdgeClick={handleEdgeClick}
-        onConnect={handleConnect}
-        onNodeDoubleClick={handleNodeDoubleClick}
-        onEdgeDoubleClick={handleEdgeDoubleClick}
-        onNodeContextMenu={handleNodeContextMenu}
-        onPaneContextMenu={handlePaneContextMenu}
-        onEdgeContextMenu={handleEdgeContextMenu}
-        onNodesDelete={handleNodesDelete}
+        onNodeClick={gestureHandlers.handleNodeClick}
+        onPaneClick={gestureHandlers.handlePaneClick}
+        onEdgeClick={gestureHandlers.handleEdgeClick}
+        onConnect={gestureHandlers.handleConnect}
+        onNodeDoubleClick={gestureHandlers.handleNodeDoubleClick}
+        onEdgeDoubleClick={gestureHandlers.handleEdgeDoubleClick}
+        onNodeContextMenu={gestureHandlers.handleNodeContextMenu}
+        onPaneContextMenu={gestureHandlers.handlePaneContextMenu}
+        onEdgeContextMenu={gestureHandlers.handleEdgeContextMenu}
+        onNodesDelete={gestureHandlers.handleNodesDelete}
         zoomOnDoubleClick={false}
+        autoPanOnNodeFocus={false}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         deleteKeyCode="Delete"
@@ -582,122 +165,46 @@ export function GraphCanvas({ source = "main" }: GraphCanvasProps) {
       </ReactFlow>
 
       {edgeSourceId && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-sky-900/80 text-sky-200 text-xs px-4 py-2 rounded-lg border border-sky-700 flex items-center gap-2 z-50">
-          <Link className="w-3.5 h-3.5" />
-          {isTouchDevice ? "Tap" : "Click"} a target node to connect from <span className="font-bold">{edgeSourceId}</span>
-          <button
-            onClick={() => setEdgeSourceId(null)}
-            className="ml-2 text-sky-400 hover:text-sky-200 underline"
-          >
-            Cancel
-          </button>
-        </div>
+        <EdgeCreationBanner
+          edgeSourceId={edgeSourceId}
+          isTouchDevice={isTouchDevice}
+          onCancel={() => setEdgeSourceId(null)}
+        />
       )}
 
-      {cycleWarning && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-yellow-900/80 text-yellow-200 text-xs px-4 py-2 rounded-lg border border-yellow-700 z-50 animate-in fade-in duration-200">
-          Edge added, but it created a cycle in an acyclic graph
-        </div>
-      )}
+      <CycleWarningBanner show={cycleWarning} />
 
-      {ctxMenu && (
-        <div
-          className="fixed z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl shadow-black/40 py-1 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
-          style={{ left: ctxMenu.screenX, top: ctxMenu.screenY }}
-          onClick={(ev) => ev.stopPropagation()}
-        >
-          {ctxMenu.type === "pane" && (
-            <MenuItem icon={<Plus className="w-3.5 h-3.5" />} label="Add Node" onClick={doAddNode} />
-          )}
-          {ctxMenu.type === "node" && (
-            <>
-              <MenuItem icon={<Link className="w-3.5 h-3.5" />} label="Add Edge from here..." onClick={doStartEdgeCreation} />
-              <MenuItem icon={<PlayIcon className="w-3.5 h-3.5" />} label="Set as Start" onClick={doSetStart} />
-              <MenuItem icon={<Flag className="w-3.5 h-3.5" />} label="Set as End" onClick={doSetEnd} />
-              <div className="my-1 border-t border-zinc-800" />
-              <MenuItem icon={<Trash2 className="w-3.5 h-3.5" />} label="Delete Node" onClick={doDeleteNode} danger />
-            </>
-          )}
-          {ctxMenu.type === "edge" && (
-            <>
-              <MenuItem icon={<Hash className="w-3.5 h-3.5" />} label="Change weight" onClick={doOpenWeightEditor} />
-              <MenuItem icon={<Trash2 className="w-3.5 h-3.5" />} label="Delete Edge" onClick={doDeleteEdge} danger />
-            </>
-          )}
-        </div>
-      )}
+      <ContextMenuOverlay
+        ctxMenu={ctxMenu}
+        onAddNode={gestureHandlers.doAddNode}
+        onDeleteNode={gestureHandlers.doDeleteNode}
+        onSetStart={gestureHandlers.doSetStart}
+        onSetEnd={gestureHandlers.doSetEnd}
+        onStartEdgeCreation={gestureHandlers.doStartEdgeCreation}
+        onOpenWeightEditor={gestureHandlers.doOpenWeightEditor}
+        onDeleteEdge={gestureHandlers.doDeleteEdge}
+        onResetPlayback={() => {
+          actions.resetPlayback();
+          closeMenu();
+        }}
+      />
 
       {editingEdge && (
-        <div
-          className="absolute z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl shadow-black/40 p-3 flex flex-col gap-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-100"
-          style={{ left: editingEdge.x, top: editingEdge.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span className="text-xs text-zinc-400">Edge weight</span>
-          <div className="flex gap-2 items-center">
-            <input
-              type="number"
-              value={editingEdge.weightInput}
-              onChange={(e) => setEditingEdge((prev) => prev && { ...prev, weightInput: e.target.value })}
-              onKeyDown={handleEditingEdgeKeyDown}
-              className="flex-1 bg-zinc-800 border border-zinc-600 rounded px-2 py-1 text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
-              autoFocus
-            />
-            <button
-              onClick={handleApplyEdgeWeight}
-              className="px-2 py-1 text-xs bg-sky-600 hover:bg-sky-500 text-white rounded transition-colors"
-            >
-              OK
-            </button>
-          </div>
-        </div>
+        <EdgeWeightEditorOverlay
+          editingEdge={editingEdge}
+          onWeightInputChange={(value) =>
+            setEditingEdge((prev) => prev && { ...prev, weightInput: value })
+          }
+          onApply={() => gestureHandlers.handleApplyEdgeWeight(editingEdge)}
+          onKeyDown={(e) => gestureHandlers.handleEditingEdgeKeyDown(e, editingEdge)}
+        />
       )}
 
-      {!isPlayback && !edgeSourceId && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-wrap gap-x-3 gap-y-1 justify-center text-[10px] text-zinc-600 pointer-events-none select-none max-w-[95vw] px-2">
-          {isTouchDevice ? (
-            <>
-              <span>Double-tap empty space to add node</span>
-              <span>|</span>
-              <span>Double-tap edge for menu</span>
-              <span>|</span>
-              <span>Tap node to select</span>
-              <span>|</span>
-              <span>Double-tap node for menu</span>
-              <span>|</span>
-              <span>Select + Delete to remove</span>
-            </>
-          ) : (
-            <>
-              <span>Right-click empty space to add node</span>
-              <span>|</span>
-              <span>Click edge for menu</span>
-              <span>|</span>
-              <span>Left click on node to select</span>
-              <span>|</span>
-              <span>Right-click node for menu</span>
-              <span>|</span>
-              <span>Select + Delete to remove</span>
-            </>
-          )}
-        </div>
-      )}
+      <CanvasHintsOverlay
+        isTouchDevice={isTouchDevice}
+        isPlayback={storeData.isPlayback}
+        edgeSourceId={edgeSourceId}
+      />
     </div>
-  );
-}
-
-function MenuItem({ icon, label, onClick, danger }: { icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-xs transition-colors ${
-        danger
-          ? "text-red-400 hover:bg-red-950/40"
-          : "text-zinc-300 hover:bg-zinc-800"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }

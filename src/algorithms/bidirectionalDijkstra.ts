@@ -114,7 +114,7 @@ function bidirectionalDijkstraRun(
           }
 
           pushStep(
-            `Forward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. New dist=${newDist}.`,
+            `Forward: relax ${current} - > ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. New dist=${newDist}.`,
             { auxiliary: { ...toSorted(), currentVertex: current, lastAddedToQueue: nodeId, lastAddedToQueueIndex: 0 } }
           );
           edgeStates[edgeId] = "traversed";
@@ -162,7 +162,7 @@ function bidirectionalDijkstraRun(
           }
 
           pushStep(
-            `Backward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. New dist=${newDist}.`,
+            `Backward: relax ${current} - > ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. New dist=${newDist}.`,
             { auxiliary: { ...toSorted(), currentVertex: current, lastAddedToQueue: nodeId, lastAddedToQueueIndex: 1 } }
           );
           edgeStates[edgeId] = "traversedBackward";
@@ -202,7 +202,7 @@ registerAlgorithm({
   description:
     "Bidirectional Dijkstra: runs Dijkstra from both start and end simultaneously. " +
     "Terminates when frontiers meet with proven optimal distance. Typically explores fewer nodes than regular Dijkstra. " +
-    "Requires non-negative weights and end node. O((V + E) log V).",
+    "Requires non-negative weights and end node. Time O((V + E) log V), space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

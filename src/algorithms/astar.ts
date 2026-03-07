@@ -135,7 +135,7 @@ registerAlgorithm({
   name: "A*",
   description:
     "A*: shortest path with heuristic f=g+h. Uses Euclidean distance from node positions. " +
-    "Requires end node. Non-negative weights only.",
+    "Requires end node. Non-negative weights only. Time O((V + E) log V), space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

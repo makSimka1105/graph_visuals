@@ -46,7 +46,7 @@ export function ComparisonSidebar() {
   if (!expanded) {
     return (
       <div className="fixed right-auto left-[calc(0.75rem+env(safe-area-inset-left))] top-[calc(0.75rem+env(safe-area-inset-top))] bottom-0 z-[60] pointer-events-auto">
-        <div className="flex flex-col items-center py-3 md:py-4 px-2 md:px-0 gap-2 bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl md:border-zinc-800 md:w-14 shadow-lg md:shadow-none shrink-0 w-auto">
+        <div className="flex flex-col items-center py-3 md:py-4 px-2 md:px-0 gap-2 bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl md:border-zinc-800 md:w-14 shadow-lg md:shadow-none shrink-0 w-auto select-none">
           <Button
             variant="ghost"
             size="icon"
@@ -102,7 +102,7 @@ export function ComparisonSidebar() {
 
   return (
     <div className="fixed md:static inset-0 md:inset-auto z-40 md:z-auto bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col overflow-hidden w-full md:w-[360px] md:flex-[0_0_360px] md:min-w-0 h-[100dvh] md:h-[100dvh] md:min-h-screen md:max-h-[100dvh] overscroll-contain">
-      <div className="flex flex-col gap-1 px-4 py-3 border-b border-zinc-800 shrink-0">
+      <div className="flex flex-col gap-1 px-4 py-3 border-b border-zinc-800 shrink-0 select-none">
         <h2 className="text-sm font-semibold text-zinc-100">Algorithm Comparison</h2>
         <div className="flex gap-2 justify-between">
           <Link href="/" className="shrink-0 min-w-0">

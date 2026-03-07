@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { GraphNode, GraphEdge, AlgorithmStep } from "@/types/graph";
+import type { GraphNode, GraphEdge, AlgorithmStep, HeuristicType } from "@/types/graph";
 
 interface ComparisonGraphState {
   nodes: GraphNode[];
@@ -9,6 +9,7 @@ interface ComparisonGraphState {
   version: number;
   sourcePresetId: string | null;
   isModified: boolean;
+  heuristicType: HeuristicType;
 }
 
 type PlaybackState = "idle" | "playing" | "paused" | "finished";
@@ -21,6 +22,7 @@ const emptyGraphState: ComparisonGraphState = {
   version: 0,
   sourcePresetId: null,
   isModified: false,
+  heuristicType: "euclidean",
 };
 
 interface ComparisonState {
@@ -198,6 +200,50 @@ const comparisonSlice = createSlice({
     comparisonSetShowDistances(state, action: PayloadAction<boolean>) {
       state.showDistances = action.payload;
     },
+    comparisonSetHeuristicTypeA(state, action: PayloadAction<HeuristicType>) {
+      state.graphA.heuristicType = action.payload;
+    },
+    comparisonSetHeuristicTypeB(state, action: PayloadAction<HeuristicType>) {
+      state.graphB.heuristicType = action.payload;
+    },
+    comparisonRecalculateWeightsA(state) {
+      const posMap = new Map<string, { x: number; y: number }>();
+      for (const n of state.graphA.nodes) {
+        posMap.set(n.id, { x: n.x ?? 0, y: n.y ?? 0 });
+      }
+      const SCALE = 0.01;
+      for (const e of state.graphA.edges) {
+        const a = posMap.get(e.source) ?? { x: 0, y: 0 };
+        const b = posMap.get(e.target) ?? { x: 0, y: 0 };
+        const dist = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2) * SCALE;
+        e.weight = Math.max(1, Math.round(dist * 10));
+      }
+      state.weighted = true;
+      state.graphA.isModified = true;
+      state.graphA.version += 1;
+      state.stepsA = [];
+      state.stepsB = [];
+      state.metrics = [];
+    },
+    comparisonRecalculateWeightsB(state) {
+      const posMap = new Map<string, { x: number; y: number }>();
+      for (const n of state.graphB.nodes) {
+        posMap.set(n.id, { x: n.x ?? 0, y: n.y ?? 0 });
+      }
+      const SCALE = 0.01;
+      for (const e of state.graphB.edges) {
+        const a = posMap.get(e.source) ?? { x: 0, y: 0 };
+        const b = posMap.get(e.target) ?? { x: 0, y: 0 };
+        const dist = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2) * SCALE;
+        e.weight = Math.max(1, Math.round(dist * 10));
+      }
+      state.weighted = true;
+      state.graphB.isModified = true;
+      state.graphB.version += 1;
+      state.stepsA = [];
+      state.stepsB = [];
+      state.metrics = [];
+    },
     setStepsA(state, action: PayloadAction<AlgorithmStep[]>) {
       state.stepsA = action.payload;
       state.currentStepIndex = -1;
@@ -287,6 +333,10 @@ export const {
   comparisonSetWeighted,
   comparisonSetAcyclic,
   comparisonSetShowDistances,
+  comparisonSetHeuristicTypeA,
+  comparisonSetHeuristicTypeB,
+  comparisonRecalculateWeightsA,
+  comparisonRecalculateWeightsB,
   setStepsA,
   setStepsB,
   setMetrics,

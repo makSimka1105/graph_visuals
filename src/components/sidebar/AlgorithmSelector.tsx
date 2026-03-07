@@ -66,13 +66,26 @@ export function AlgorithmSelector({ source = "main" }: AlgorithmSelectorProps) {
       : compGraphB.edges
     : mainEdges;
 
-  const algorithms = getAllAlgorithms();
-
+  const mainHeuristicType = useAppSelector((s) => s.graph.heuristicType);
+  const mainStartNodeId = useAppSelector((s) => s.graph.startNodeId);
+  const mainEndNodeId = useAppSelector((s) => s.graph.endNodeId);
+  const heuristicType = isComparison ? "euclidean" : mainHeuristicType;
+  const startNodeId = isComparison
+    ? source === "A"
+      ? compGraphA.startNodeId
+      : compGraphB.startNodeId
+    : mainStartNodeId;
+  const endNodeId = isComparison
+    ? source === "A"
+      ? compGraphA.endNodeId
+      : compGraphB.endNodeId
+    : mainEndNodeId;
   const graphState = useMemo(
-    () => ({ directed, weighted, acyclic, nodes, edges }),
-    [directed, weighted, acyclic, nodes, edges],
+    () => ({ directed, weighted, acyclic, nodes, edges, heuristicType, startNodeId, endNodeId }),
+    [directed, weighted, acyclic, nodes, edges, heuristicType, startNodeId, endNodeId],
   );
 
+  const algorithms = getAllAlgorithms();
   const selectedAlg = selectedId ? getAlgorithm(selectedId) : null;
   const selectedCompat = useMemo(
     () => selectedAlg ? checkCompatibility(selectedAlg, graphState) : null,
@@ -80,7 +93,7 @@ export function AlgorithmSelector({ source = "main" }: AlgorithmSelectorProps) {
   );
 
   return (
-    <div className="space-y-3 min-w-0 w-full overflow-hidden">
+    <div className="space-y-3 min-w-0 w-full overflow-hidden select-none [&_.alg-description]:select-text">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Algorithm
       </h3>
@@ -94,36 +107,22 @@ export function AlgorithmSelector({ source = "main" }: AlgorithmSelectorProps) {
           else dispatch(setAlgB(val));
         }}
       >
-        <SelectTrigger className={`bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate ${selectedCompat && !selectedCompat.ok ? "border-red-800" : ""}`}>
+        <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
           <SelectValue placeholder="Select algorithm..." />
         </SelectTrigger>
         <SelectContent className="bg-zinc-900 border-zinc-700 max-w-[200px]">
-          {algorithms.map((alg) => {
-            const compat = checkCompatibility(alg, graphState);
-            const firstError = compat.warnings.find((w) => w.severity === "error");
-            return (
-              <SelectItem
-                key={alg.id}
-                value={alg.id}
-                disabled={!compat.ok}
-                className={!compat.ok ? "opacity-40" : ""}
-              >
-                <div className="flex items-center gap-2">
-                  <span>{alg.name}</span>
-                  {firstError && (
-                    <span className="text-[10px] text-red-400">({firstError.message})</span>
-                  )}
-                </div>
-              </SelectItem>
-            );
-          })}
+          {algorithms.map((alg) => (
+            <SelectItem key={alg.id} value={alg.id}>
+              {alg.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       </div>
 
       {selectedAlg && (
         <div className="space-y-2">
-          <p className="text-xs text-zinc-500 leading-relaxed">{selectedAlg.description}</p>
+          <p className="alg-description text-xs text-zinc-500 leading-relaxed">{selectedAlg.description}</p>
           <div className="flex flex-wrap gap-1">
             {selectedAlg.requiresEndNode && (
               <Tooltip delayDuration={400}>
@@ -162,7 +161,7 @@ export function AlgorithmSelector({ source = "main" }: AlgorithmSelectorProps) {
                 <TooltipTrigger asChild>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-900/40 text-sky-400 border border-sky-800/50 cursor-help">uses heuristic</span>
                 </TooltipTrigger>
-                <TooltipContent>Uses Euclidean distance from node positions as heuristic.</TooltipContent>
+                <TooltipContent>Heuristic: Euclidean, Manhattan, or Zero (selectable in Graph Input). Euclidean uses distance from node positions.</TooltipContent>
               </Tooltip>
             )}
             {(selectedAlg.id === "bidirectional-dijkstra" || selectedAlg.id === "bidirectional-astar") && (
@@ -187,6 +186,38 @@ export function AlgorithmSelector({ source = "main" }: AlgorithmSelectorProps) {
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-900/40 text-sky-400 border border-sky-800/50 cursor-help">all-pairs</span>
                 </TooltipTrigger>
                 <TooltipContent>Computes shortest paths between all pairs of nodes. O(V³).</TooltipContent>
+              </Tooltip>
+            )}
+            {selectedAlg.id === "kosaraju" && (
+              <Tooltip delayDuration={400}>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-400 border border-emerald-800/50 cursor-help">SCC</span>
+                </TooltipTrigger>
+                <TooltipContent>Finds strongly connected components. Directed graphs only. Vertices colored by SCC.</TooltipContent>
+              </Tooltip>
+            )}
+            {(selectedAlg.id === "prim" || selectedAlg.id === "kruskal") && (
+              <Tooltip delayDuration={400}>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-400 border border-emerald-800/50 cursor-help">MST</span>
+                </TooltipTrigger>
+                <TooltipContent>Minimum spanning tree. Gray = not in tree, green = in MST. Undirected weighted graphs only.</TooltipContent>
+              </Tooltip>
+            )}
+            {!selectedAlg.supportsUndirected && (
+              <Tooltip delayDuration={400}>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-900/40 text-violet-400 border border-violet-800/50 cursor-help">directed only</span>
+                </TooltipTrigger>
+                <TooltipContent>This algorithm works only on directed graphs.</TooltipContent>
+              </Tooltip>
+            )}
+            {!selectedAlg.supportsDirected && (
+              <Tooltip delayDuration={400}>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-900/40 text-teal-400 border border-teal-800/50 cursor-help">undirected only</span>
+                </TooltipTrigger>
+                <TooltipContent>This algorithm works only on undirected graphs.</TooltipContent>
               </Tooltip>
             )}
           </div>

@@ -14,6 +14,8 @@ const edgeColors: Record<EdgeVisualState, string> = {
   path: "#22c55e",
   traversedBackward: "#9ca3af",
   currentBackward: "#d946ef",
+  inTree: "#22c55e",
+  rejected: "#52525b",
 };
 
 const edgeWidths: Record<EdgeVisualState, number> = {
@@ -23,6 +25,12 @@ const edgeWidths: Record<EdgeVisualState, number> = {
   path: 3,
   traversedBackward: 2,
   currentBackward: 3,
+  inTree: 3,
+  rejected: 1,
+};
+
+const edgeOpacity: Partial<Record<EdgeVisualState, number>> = {
+  rejected: 0.35,
 };
 
 const SELECTED_OUT_COLOR = "#38bdf8";
@@ -66,12 +74,17 @@ function CustomEdgeComponent({
   let width: number;
   let opacity = 1;
 
-  const isActiveAlgState = state === "current" || state === "currentBackward" || state === "path";
+  const isActiveAlgState = state === "current" || state === "currentBackward" || state === "path" || state === "inTree";
   const isPassiveAlgState = state === "traversed" || state === "traversedBackward";
+  const isRejected = state === "rejected";
 
   if (isActiveAlgState) {
     color = edgeColors[state];
     width = edgeWidths[state];
+  } else if (isRejected) {
+    color = edgeColors.rejected;
+    width = edgeWidths.rejected;
+    opacity = edgeOpacity.rejected ?? 0.35;
   } else if (hovered) {
     color = HOVER_COLOR;
     width = HOVER_WIDTH;

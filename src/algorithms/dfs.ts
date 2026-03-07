@@ -74,7 +74,7 @@ registerAlgorithm({
   name: "DFS",
   description:
     "Depth-First Search: goes as deep as possible before backtracking. Does NOT guarantee shortest path. " +
-    "Ignores edge weights. Works on directed and undirected. O(V + E).",
+    "Ignores edge weights. Works on directed and undirected. Time O(V + E), space O(V).",
   category: "shortest-path",
   supportsWeighted: false,
   supportsDirected: true,

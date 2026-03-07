@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setSteps } from "@/store/slices/algorithmSlice";
 import { getAlgorithm } from "@/algorithms/registry";
+import { checkCompatibility } from "@/lib/graphValidator";
 import { usePlaybackEngine } from "@/hooks/usePlaybackEngine";
 import { GraphSettings } from "./GraphSettings";
 import { GraphInput } from "./GraphInput";
@@ -33,19 +34,33 @@ export function Sidebar() {
   const alg = selectedAlgorithmId ? getAlgorithm(selectedAlgorithmId) : null;
   const hasSteps = steps.length > 0;
 
+  const compat = useMemo(
+    () =>
+      alg
+        ? checkCompatibility(alg, {
+            directed: graph.directed,
+            weighted: graph.weighted,
+            acyclic: graph.acyclic,
+            nodes: graph.nodes,
+            edges: graph.edges,
+            heuristicType: graph.heuristicType,
+            startNodeId: graph.startNodeId,
+            endNodeId: graph.endNodeId,
+          })
+        : null,
+    [alg, graph.directed, graph.weighted, graph.acyclic, graph.nodes, graph.edges, graph.heuristicType, graph.startNodeId, graph.endNodeId],
+  );
+
   const canRun = useMemo(() => {
     if (!selectedAlgorithmId || !alg) return false;
-    if (graph.nodes.length === 0 || !graph.startNodeId) return false;
-    if (alg.requiresEndNode && !graph.endNodeId) return false;
-    if (graph.directed && !alg.supportsDirected) return false;
-    if (!graph.directed && !alg.supportsUndirected) return false;
-    if (graph.startNodeId === graph.endNodeId) return false;
-    return true;
-  }, [selectedAlgorithmId, alg, graph]);
+    if (graph.nodes.length === 0) return false;
+    return compat?.ok ?? false;
+  }, [selectedAlgorithmId, alg, graph.nodes.length, compat]);
 
   const handleRun = () => {
-    if (!canRun || !selectedAlgorithmId || !graph.startNodeId || !alg) return;
-    const result = alg.run(graph, graph.startNodeId, graph.endNodeId ?? undefined);
+    if (!canRun || !selectedAlgorithmId || !alg) return;
+    const startNode = graph.startNodeId ?? graph.nodes[0]?.id ?? "";
+    const result = alg.run(graph, startNode, graph.endNodeId ?? undefined);
     dispatch(setSteps(result));
   };
 
@@ -67,7 +82,7 @@ export function Sidebar() {
   if (!expanded) {
     return (
       <div className="fixed left-auto right-[calc(0.75rem+env(safe-area-inset-right))] md:left-[calc(0.75rem+env(safe-area-inset-left))] md:right-auto top-[calc(0.75rem+env(safe-area-inset-top))] bottom-0 z-[60] pointer-events-auto">
-        <div className="flex flex-col items-center py-3 md:py-4 px-2 md:px-0 gap-2 bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl  md:border-zinc-800 md:w-14 shadow-lg md:shadow-none shrink-0 w-auto">
+        <div className="flex flex-col items-center py-3 md:py-4 px-2 md:px-0 gap-2 bg-zinc-950/95 backdrop-blur border border-zinc-800 rounded-xl  md:border-zinc-800 md:w-14 shadow-lg md:shadow-none shrink-0 w-auto select-none">
         <Button
           variant="ghost"
           size="icon"
@@ -123,7 +138,7 @@ export function Sidebar() {
 
   return (
     <div className="fixed md:static inset-0 md:inset-auto z-40 md:z-auto bg-zinc-950 border-b md:border-b-0 md:border-r border-zinc-800 flex flex-col shrink-0 overflow-hidden w-full md:w-[360px] h-[100dvh] md:h-[100dvh] md:min-h-screen md:max-h-[100dvh] overscroll-contain">
-      <div className="flex flex-col gap-1 px-4 py-3 border-b border-zinc-800 shrink-0">
+      <div className="flex flex-col gap-1 px-4 py-3 border-b border-zinc-800 shrink-0 select-none">
         <h2 className="text-sm font-semibold text-zinc-100">Graph Algorithms</h2>
         <div className="flex gap-2 justify-between">
           <Link href="/about" className="shrink-0 min-w-0">

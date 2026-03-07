@@ -78,7 +78,7 @@ registerAlgorithm({
   name: "BFS",
   description:
     "Breadth-First Search: explores graph layer by layer. Guarantees shortest path in unweighted graphs. " +
-    "Ignores edge weights (treats all as 1). Works on directed and undirected. O(V + E).",
+    "Ignores edge weights (treats all as 1). Works on directed and undirected. Time O(V + E), space O(V).",
   category: "shortest-path",
   supportsWeighted: false,
   supportsDirected: true,

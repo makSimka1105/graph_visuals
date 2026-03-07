@@ -33,7 +33,7 @@ export function ComparisonPlaybackControls() {
             : "Very Slow";
 
   return (
-    <div className="space-y-4 min-w-0 w-full overflow-hidden">
+    <div className="space-y-4 min-w-0 w-full overflow-hidden select-none">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Playback</h3>
 
       {!hasSteps && (

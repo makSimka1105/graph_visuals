@@ -12,11 +12,14 @@ export interface GraphEdge {
   weight?: number;
 }
 
+export type HeuristicType = "euclidean" | "manhattan" | "zero";
+
 export interface Graph {
   nodes: GraphNode[];
   edges: GraphEdge[];
   directed: boolean;
   weighted: boolean;
+  heuristicType?: HeuristicType;
 }
 
 export type NodeVisualState =
@@ -29,7 +32,8 @@ export type NodeVisualState =
   | "end"
   | "visitedBackward"
   | "currentBackward"
-  | "inQueueBackward";
+  | "inQueueBackward"
+  | "inTree";
 
 export type EdgeVisualState =
   | "default"
@@ -37,7 +41,9 @@ export type EdgeVisualState =
   | "current"
   | "path"
   | "traversedBackward"
-  | "currentBackward";
+  | "currentBackward"
+  | "inTree"
+  | "rejected";
 
 export interface PriorityQueueItem {
   dist: number;
@@ -74,11 +80,27 @@ export interface FloydMatrixData {
   updatedInPhase: string[];
 }
 
+export interface KosarajuExitIndicesData {
+  nodeIds: string[];
+  exitIndices: Record<string, number>;
+  currentVertex?: string;
+  currentIndex?: number;
+  phase: "dfs1" | "dfs2";
+}
+
+export interface StepDataMap {
+  pathNodeIds?: string[];
+  floydMatrix?: FloydMatrixData;
+  kosarajuExitIndices?: KosarajuExitIndicesData;
+  sccColors?: Record<string, number>;
+  showReversedEdges?: boolean;
+}
+
 export interface AlgorithmStep {
   nodeStates: Record<string, NodeVisualState>;
   edgeStates: Record<string, EdgeVisualState>;
   description: string;
-  data?: Record<string, unknown>;
+  data?: StepDataMap & Record<string, unknown>;
   distances?: Record<string, number>;
   auxiliary?: AuxiliaryData;
   edgeWeightOverrides?: Record<string, number>;
@@ -88,12 +110,14 @@ export interface AlgorithmDefinition {
   id: string;
   name: string;
   description: string;
-  category: "shortest-path";
+  category: "shortest-path" | "scc" | "mst";
   supportsWeighted: boolean;
   supportsDirected: boolean;
   supportsUndirected: boolean;
   requiresEndNode: boolean;
+  requiresStartNode?: boolean;
   requiresNonNegativeWeights?: boolean;
+  usesExitIndices?: boolean;
   run: (graph: Graph, startNode: string, endNode?: string) => AlgorithmStep[];
 }
 

@@ -93,7 +93,7 @@ registerAlgorithm({
   name: "Dijkstra",
   description:
     "Dijkstra: shortest path with priority queue. Uses edge weights when graph is weighted, " +
-    "otherwise treats edges as weight 1. Requires non-negative weights. O((V + E) log V).",
+    "otherwise treats edges as weight 1. Requires non-negative weights. Time O((V + E) log V), space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

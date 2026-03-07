@@ -63,7 +63,7 @@ function johnsonRun(graph: Graph, startNode: string, endNode?: string): Algorith
         nodeStates[target] = "inQueue";
         const bfDistRelax: Record<string, number> = {};
         for (const id of nodeIds) bfDistRelax[id] = h[id] ?? Infinity;
-        pushStep(`Relax ${source} -> ${target} (weight ${weight}). h(${target})=${newH}`, {
+        pushStep(`Relax ${source} - > ${target} (weight ${weight}). h(${target})=${newH}`, {
           distances: bfDistRelax,
         });
         if (source !== Q_ID) edgeStates[edgeId] = "traversed";
@@ -110,7 +110,7 @@ function johnsonRun(graph: Graph, startNode: string, endNode?: string): Algorith
     nodeStates[e.target] = "visited";
 
     pushStep(
-      `Edge ${e.source}->${e.target}: w' = w + h(${e.source}) - h(${e.target}) = ${w} + ${hu} - ${hv} = ${wPrime}.`,
+      `Edge ${e.source} - > ${e.target}: w' = w + h(${e.source}) - h(${e.target}) = ${w} + ${hu} - ${hv} = ${wPrime}.`,
       {
         edgeWeightOverrides: { ...edgeWeightOverrides },
         distances: hDist,
@@ -241,7 +241,7 @@ function johnsonRun(graph: Graph, startNode: string, endNode?: string): Algorith
         nodeStates[nodeId] = "inQueue";
         const distPrimeDisplay: Record<string, number> = {};
         for (const id of nodeIds) distPrimeDisplay[id] = (id === nodeId ? newDistPrime : distPrime[id]) ?? Infinity;
-        pushStep(`Relax ${current} -> ${nodeId}. d'=${newDistPrime.toFixed(1)}.`, {
+        pushStep(`Relax ${current} - > ${nodeId}. d'=${newDistPrime.toFixed(1)}.`, {
           edgeWeightOverrides,
           auxiliary: {
             queues: [{ items: pq.toSortedArray().map((x) => x.nodeId), type: "priority", label: "Queue d'", itemsWithDist: pq.toSortedArray() }],
@@ -303,7 +303,7 @@ registerAlgorithm({
   name: "Johnson",
   description:
     "Johnson: all-pairs shortest paths with negative weights. Bellman-Ford reweighting + Dijkstra. " +
-    "Detects negative cycles. O(V² log V + VE).",
+    "Detects negative cycles. Time O(V² log V + VE), space O(V²).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

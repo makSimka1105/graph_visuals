@@ -3,6 +3,7 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { NodeVisualState } from "@/types/graph";
+import { SCC_PALETTE } from "@/lib/sccColors";
 
 const stateStyles: Record<NodeVisualState, { bg: string; border: string; text: string }> = {
   default:  { bg: "bg-zinc-900",  border: "border-zinc-500", text: "text-zinc-100" },
@@ -15,6 +16,7 @@ const stateStyles: Record<NodeVisualState, { bg: string; border: string; text: s
   currentBackward:  { bg: "bg-fuchsia-600", border: "border-fuchsia-400", text: "text-white" },
   inQueueBackward:  { bg: "bg-amber-600",   border: "border-amber-400",  text: "text-white" },
   visitedBackward:  { bg: "bg-zinc-700",    border: "border-zinc-500",   text: "text-zinc-400" },
+  inTree:   { bg: "bg-emerald-600", border: "border-emerald-400", text: "text-white" },
 };
 
 type CustomNodeData = {
@@ -22,16 +24,23 @@ type CustomNodeData = {
   visualState?: NodeVisualState;
   isEdgeSource?: boolean;
   distance?: number;
+  distanceLabel?: "distance" | "exitIndex";
   title?: string;
+  sccColorIndex?: number;
 };
 
 function CustomNodeComponent({ data, selected }: NodeProps) {
   const nodeData = (data ?? {}) as CustomNodeData;
   const state = nodeData.visualState ?? "default";
-  const styles = stateStyles[state];
+  const sccIndex = nodeData.sccColorIndex;
+  const styles =
+    sccIndex !== undefined
+      ? SCC_PALETTE[sccIndex % SCC_PALETTE.length]
+      : stateStyles[state];
   const isEdgeSource = nodeData.isEdgeSource ?? false;
   const distance = nodeData.distance;
-  const animClass = (state === "current" || state === "currentBackward") ? "node-current" : state === "path" ? "node-path" : "";
+  const distanceLabel = nodeData.distanceLabel ?? "distance";
+  const animClass = (state === "current" || state === "currentBackward") ? "node-current" : (state === "path" || state === "inTree") ? "node-path" : "";
 
   const highlightBorder = isEdgeSource
     ? "border-sky-400 ring-2 ring-sky-400/60"
@@ -79,9 +88,13 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
             group-hover:scale-[1.1] group-hover:shadow-sky-400/20 group-hover:shadow-lg
             group-hover:${styles.border} group-hover:${styles.text}
           `}
-          title="Shortest distance"
+          title={distanceLabel === "exitIndex" ? "Exit index" : "Shortest distance"}
         >
-          {distance === Infinity ? "inf" : distance}
+          {distance === Infinity
+            ? distanceLabel === "exitIndex"
+              ? "-"
+              : "inf"
+            : distance}
         </span>
       )}
     </div>

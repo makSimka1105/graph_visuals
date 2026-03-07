@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAppDispatch, useAppSelector, useCurrentStep } from "@/store/hooks";
 import { setSpeed, setSteps } from "@/store/slices/algorithmSlice";
 import { getAlgorithm } from "@/algorithms/registry";
+import { checkCompatibility } from "@/lib/graphValidator";
 import { PlaybackButtons } from "./PlaybackButtons";
 
 export function PlaybackControls() {
@@ -19,32 +20,38 @@ export function PlaybackControls() {
   const alg = selectedAlgorithmId ? getAlgorithm(selectedAlgorithmId) : null;
   const hasSteps = steps.length > 0;
 
+  const compat = useMemo(
+    () =>
+      alg
+        ? checkCompatibility(alg, {
+            directed: graph.directed,
+            weighted: graph.weighted,
+            acyclic: graph.acyclic,
+            nodes: graph.nodes,
+            edges: graph.edges,
+            heuristicType: graph.heuristicType,
+            startNodeId: graph.startNodeId,
+            endNodeId: graph.endNodeId,
+          })
+        : null,
+    [alg, graph.directed, graph.weighted, graph.acyclic, graph.nodes, graph.edges, graph.heuristicType, graph.startNodeId, graph.endNodeId],
+  );
+
   const validation = useMemo(() => {
     const errors: string[] = [];
     if (!selectedAlgorithmId) errors.push("Select an algorithm");
     if (graph.nodes.length === 0) errors.push("Load a graph first");
-    if (!graph.startNodeId) errors.push("Select a start node");
-
-    if (alg) {
-      if (alg.requiresEndNode && !graph.endNodeId)
-        errors.push("This algorithm requires an end node");
-      if (graph.directed && !alg.supportsDirected)
-        errors.push("Algorithm doesn't support directed graphs");
-      if (!graph.directed && !alg.supportsUndirected)
-        errors.push("Algorithm doesn't support undirected graphs");
-      if (graph.startNodeId === graph.endNodeId && graph.startNodeId !== null)
-        errors.push("Start and end node must be different");
-    }
     return errors;
-  }, [selectedAlgorithmId, alg, graph.nodes.length, graph.startNodeId, graph.endNodeId, graph.directed]);
+  }, [selectedAlgorithmId, graph.nodes.length]);
 
-  const canRun = validation.length === 0;
+  const canRun = validation.length === 0 && (compat?.ok ?? true);
 
   const handleRun = () => {
-    if (!canRun || !selectedAlgorithmId || !graph.startNodeId) return;
+    if (!canRun || !selectedAlgorithmId) return;
     const algorithm = getAlgorithm(selectedAlgorithmId);
     if (!algorithm) return;
-    const result = algorithm.run(graph, graph.startNodeId, graph.endNodeId ?? undefined);
+    const startNode = graph.startNodeId ?? graph.nodes[0]?.id ?? "";
+    const result = algorithm.run(graph, startNode, graph.endNodeId ?? undefined);
     dispatch(setSteps(result));
   };
 
@@ -57,7 +64,7 @@ export function PlaybackControls() {
     speed <= 100 ? "Very Fast" : speed <= 300 ? "Fast" : speed <= 600 ? "Normal" : speed <= 1000 ? "Slow" : "Very Slow";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 select-none">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Playback
         
@@ -73,12 +80,15 @@ export function PlaybackControls() {
           {!canRun && validation.length > 0 && (
             <div className="space-y-1">
               {validation.map((err, i) => (
-                <div key={i} className="flex items-start gap-1.5 text-[11px] text-zinc-500">
-                  <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0 text-zinc-600" />
+                <div key={i} className="flex items-start gap-1.5 text-[11px] rounded px-2 py-1.5 bg-red-950/30 text-red-400">
+                  <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
                   <span>{err}</span>
                 </div>
               ))}
             </div>
+          )}
+          {!canRun && validation.length === 0 && compat && !compat.ok && (
+            <p className="text-[11px] text-zinc-500">Fix the issues above to run</p>
           )}
         </>
       )}

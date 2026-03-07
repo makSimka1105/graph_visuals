@@ -51,7 +51,6 @@ export default function AboutPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-12 flex flex-col items-center">
-        {/* Hero */}
         <section className="w-full text-center space-y-4 mb-16">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/50 px-4 py-1.5 text-sm text-zinc-400">
             <Network className="w-4 h-4" />
@@ -65,7 +64,6 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Функционал */}
         <section className="w-full text-center space-y-6 mb-16">
           <h3 className="text-xl font-semibold text-zinc-100 flex items-center justify-center gap-2">
             <Zap className="w-5 h-5 text-zinc-500" />
@@ -93,7 +91,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Команда */}
         <section className="w-full text-center space-y-8 mb-16">
           <h3 className="text-xl font-semibold text-zinc-100 flex items-center justify-center gap-2">
             <GraduationCap className="w-5 h-5 text-zinc-500" />
@@ -118,7 +115,6 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Технологии */}
         <section className="w-full text-center space-y-6 mb-16">
           <h3 className="text-xl font-semibold text-zinc-100 flex items-center justify-center gap-2">
             <Code2 className="w-5 h-5 text-zinc-500" />
@@ -136,7 +132,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Поддержка в Telegram */}
         <section className="w-full text-center mb-12">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-8 max-w-md mx-auto">
             <h3 className="text-lg font-medium text-zinc-100 mb-2">Поддержка</h3>
@@ -155,7 +150,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* CTA */}
         <section className="w-full text-center">
           <Link href="/">
             <Button className="gap-2 bg-zinc-100 text-zinc-900 hover:bg-zinc-200">

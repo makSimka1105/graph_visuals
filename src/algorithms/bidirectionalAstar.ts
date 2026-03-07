@@ -125,7 +125,7 @@ function bidirectionalAstarRun(
           }
 
           pushStep(
-            `Forward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG}, f=${fNew}.`,
+            `Forward: relax ${current} - > ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG}, f=${fNew}.`,
             { auxiliary: { ...toSorted(), currentVertex: current, lastAddedToQueue: nodeId, lastAddedToQueueIndex: 0 } }
           );
           edgeStates[edgeId] = "traversed";
@@ -176,7 +176,7 @@ function bidirectionalAstarRun(
           }
 
           pushStep(
-            `Backward: relax ${current} → ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG}, f=${fNew}.`,
+            `Backward: relax ${current} - > ${nodeId}${graph.weighted ? ` (w=${edgeWeight})` : ""}. g=${newG}, f=${fNew}.`,
             { auxiliary: { ...toSorted(), currentVertex: current, lastAddedToQueue: nodeId, lastAddedToQueueIndex: 1 } }
           );
           edgeStates[edgeId] = "traversedBackward";
@@ -215,7 +215,7 @@ registerAlgorithm({
   name: "Bidirectional A*",
   description:
     "Bidirectional A*: runs A* from both start and end with Euclidean heuristic. " +
-    "Typically explores fewer nodes than unidirectional A*. Requires non-negative weights and end node. O((V + E) log V).",
+    "Typically explores fewer nodes than unidirectional A*. Requires non-negative weights and end node. Time O((V + E) log V), space O(V).",
   category: "shortest-path",
   supportsWeighted: true,
   supportsDirected: true,

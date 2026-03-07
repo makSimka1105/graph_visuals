@@ -12,9 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw, Ruler } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { setGraph, setStartNode, setEndNode } from "@/store/slices/graphSlice";
+import { setGraph, setStartNode, setEndNode, setHeuristicType, recalculateWeightsByGeometry } from "@/store/slices/graphSlice";
 import { resetPlayback } from "@/store/slices/algorithmSlice";
 import {
   setGraphA,
@@ -24,6 +24,10 @@ import {
   setStartNodeB,
   setEndNodeB,
   comparisonClearResults,
+  comparisonSetHeuristicTypeA,
+  comparisonSetHeuristicTypeB,
+  comparisonRecalculateWeightsA,
+  comparisonRecalculateWeightsB,
 } from "@/store/slices/comparisonSlice";
 import { generateRandomGraph, edgeLimits } from "@/lib/graphGenerator";
 import { getPreset, presetList, getRecommendedCategoryLabel, type PresetTags } from "@/lib/presets";
@@ -57,10 +61,15 @@ export function GraphInput({ source = "main" }: GraphInputProps) {
   const mainEndNodeId = useAppSelector((s) => s.graph.endNodeId);
   const mainSourcePresetId = useAppSelector((s) => s.graph.sourcePresetId);
   const mainIsModified = useAppSelector((s) => s.graph.isModified);
+  const mainHeuristicType = useAppSelector((s) => s.graph.heuristicType);
+  const mainEdges = useAppSelector((s) => s.graph.edges);
+  const selectedAlgorithmId = useAppSelector((s) => s.algorithm.selectedAlgorithmId);
 
   const compDirected = useAppSelector((s) => s.comparison.directed);
   const compWeighted = useAppSelector((s) => s.comparison.weighted);
   const compAcyclic = useAppSelector((s) => s.comparison.acyclic);
+  const compAlgA = useAppSelector((s) => s.comparison.algA);
+  const compAlgB = useAppSelector((s) => s.comparison.algB);
   const compGraphA = useAppSelector((s) => s.comparison.graphA);
   const compGraphB = useAppSelector((s) => s.comparison.graphB);
 
@@ -82,6 +91,24 @@ export function GraphInput({ source = "main" }: GraphInputProps) {
       ? compGraphA.isModified
       : compGraphB.isModified
     : mainIsModified;
+  const heuristicType = source === "main"
+    ? mainHeuristicType
+    : source === "A"
+      ? compGraphA.heuristicType ?? "euclidean"
+      : compGraphB.heuristicType ?? "euclidean";
+  const edges = isComparison
+    ? source === "A"
+      ? compGraphA.edges
+      : compGraphB.edges
+    : mainEdges;
+
+  const HEURISTIC_ALG_IDS = new Set(["astar", "greedy-bfs", "bidirectional-astar"]);
+  const selectedAlgForHeuristic = source === "main"
+    ? selectedAlgorithmId
+    : source === "A"
+      ? compAlgA
+      : compAlgB;
+  const showHeuristicSelector = selectedAlgForHeuristic != null && HEURISTIC_ALG_IDS.has(selectedAlgForHeuristic);
 
   const [mode, setMode] = useState<InputMode>("preset");
   const [selectedPreset, setSelectedPreset] = useState("");
@@ -183,24 +210,46 @@ export function GraphInput({ source = "main" }: GraphInputProps) {
   };
 
   return (
-    <div className="space-y-4 min-w-0">
+    <div className="space-y-4 min-w-0 select-none [&_textarea]:select-text">
       <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">
         Graph Input
       </h3>
 
       <div className="space-y-2 min-w-0">
         <Label className="text-zinc-300 text-xs">Source</Label>
-        <div className="w-full min-w-0 max-w-full">
-        <Select value={mode} onValueChange={(v) => setMode(v as InputMode)}>
-          <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700">
-            <SelectItem value="preset">Preset</SelectItem>
-            <SelectItem value="random">Random</SelectItem>
-            <SelectItem value="custom">Adjacency List</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 min-w-0">
+          <div className="flex-1 min-w-0 max-w-full">
+            <Select value={mode} onValueChange={(v) => setMode(v as InputMode)}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectItem value="preset">Preset</SelectItem>
+                <SelectItem value="random">Random</SelectItem>
+                <SelectItem value="custom">Adjacency List</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {nodes.length > 0 && edges.length > 0 && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                if (source === "main") {
+                  dispatch(recalculateWeightsByGeometry());
+                  dispatch(resetPlayback());
+                } else if (source === "A") {
+                  dispatch(comparisonRecalculateWeightsA());
+                } else {
+                  dispatch(comparisonRecalculateWeightsB());
+                }
+              }}
+              className="shrink-0 border-zinc-600 text-zinc-400 hover:text-zinc-200"
+              title="Recalculate edge weights by geometric distance between nodes"
+            >
+              <Ruler className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -255,7 +304,7 @@ export function GraphInput({ source = "main" }: GraphInputProps) {
             )}
           </div>
           {isModified && sourcePresetId && (
-            <p className="text-xs text-amber-500/90">Modified — click reset to restore original preset</p>
+            <p className="text-xs text-amber-500/90">Modified - click reset to restore original preset</p>
           )}
         </div>
       )}
@@ -314,7 +363,7 @@ export function GraphInput({ source = "main" }: GraphInputProps) {
             value={customInput}
             onChange={(e) => setCustomInput(e.target.value)}
             placeholder={"Format per line: source target [weight]\nExample:\n0 1 5\n0 2 3\n1 3 2"}
-            className="bg-zinc-900 border-zinc-700 text-zinc-200 font-mono text-xs min-h-[120px]"
+            className="bg-zinc-900 border-zinc-700 text-zinc-200 font-mono text-xs min-h-[120px] select-text"
           />
           <Button onClick={handleParseCustom} className="w-full" variant="secondary">
             Load Graph
@@ -325,6 +374,44 @@ export function GraphInput({ source = "main" }: GraphInputProps) {
       {nodes.length > 0 && (
         <div className="space-y-2 pt-2 min-w-0">
           <Label className="text-zinc-400 text-xs">Start / End Node</Label>
+          {showHeuristicSelector && (
+            <div className="space-y-1.5">
+              <Label className="text-zinc-500 text-[11px]">Heuristic</Label>
+              <Select
+                value={heuristicType}
+                onValueChange={(v) => {
+                  const val = v as "euclidean" | "manhattan" | "zero";
+                  if (source === "main") {
+                    dispatch(setHeuristicType(val));
+                    dispatch(resetPlayback());
+                  } else if (source === "A") {
+                    dispatch(comparisonSetHeuristicTypeA(val));
+                    dispatch(comparisonClearResults());
+                  } else {
+                    dispatch(comparisonSetHeuristicTypeB(val));
+                    dispatch(comparisonClearResults());
+                  }
+                }}
+              >
+                <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-200 w-full min-w-0 [&>span]:truncate">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectItem value="euclidean">Euclidean</SelectItem>
+                  <SelectItem value="manhattan">Manhattan</SelectItem>
+                  <SelectItem value="zero">Zero</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                f = g + h, где g — стоимость от старта, h — оценка до цели.
+              </p>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                {heuristicType === "euclidean" && "h = √((Δx)²+(Δy)²) — евклидово расстояние до цели"}
+                {heuristicType === "manhattan" && "h = |Δx|+|Δy| — сумма горизонтальной и вертикальной дистанций"}
+                {heuristicType === "zero" && "h = 0 — эквивалентно Dijkstra (f = g)"}
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 min-w-0">
             <div className="min-w-0 overflow-hidden">
             <Select

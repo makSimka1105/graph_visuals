@@ -32,7 +32,7 @@ export function DequeBlock({
           className={`flex items-center justify-center w-6 h-8 border border-r-0 border-zinc-600 rounded-l transition-all ${
             highlightLeft ? `${highlightClasses} text-amber-300` : "bg-zinc-800/80 text-amber-400"
           }`}
-          title="front (extract <- / push front ->)"
+          title="front (extract <- / push front - >)"
         >
           <ChevronLeft className={`w-3.5 h-3.5 ${highlightPushFront ? "scale-x-[-1]" : ""}`} />
         </div>
@@ -48,7 +48,7 @@ export function DequeBlock({
                     ? "bg-amber-500/25 text-amber-200 border border-amber-500/60"
                     : "bg-zinc-800 text-zinc-200 border border-zinc-700"
                 }`}
-                title={fromFront ? "push_front (M0->M1)" : "push_back (M2->M1)"}
+                title={fromFront ? "push_front (M0- >M1)" : "push_back (M2- >M1)"}
               >
                 {nodeId}
               </span>

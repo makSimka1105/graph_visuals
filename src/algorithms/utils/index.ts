@@ -16,4 +16,4 @@ export {
 } from "./floydMatrix";
 export { createPriorityQueue, roundForDisplay } from "./priorityQueue";
 export { initDistPrev, initMState } from "./initers";
-export { getHeuristic } from "./heuristic";
+export { getHeuristic, type HeuristicType } from "./heuristic";

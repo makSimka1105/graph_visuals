@@ -69,37 +69,37 @@ export function ComparisonResultsDrawer() {
                       <TableRow className="border-zinc-800">
                         <TableCell className="text-zinc-300">Steps</TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[0]?.stepsCount ?? "—"}
+                          {metrics[0]?.stepsCount ?? "-"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[1]?.stepsCount ?? "—"}
+                          {metrics[1]?.stepsCount ?? "-"}
                         </TableCell>
                       </TableRow>
                       <TableRow className="border-zinc-800">
                         <TableCell className="text-zinc-300">Visited Nodes</TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[0]?.visitedNodes ?? "—"}
+                          {metrics[0]?.visitedNodes ?? "-"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[1]?.visitedNodes ?? "—"}
+                          {metrics[1]?.visitedNodes ?? "-"}
                         </TableCell>
                       </TableRow>
                       <TableRow className="border-zinc-800">
                         <TableCell className="text-zinc-300">Path Length</TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[0]?.pathLength != null ? metrics[0].pathLength : "—"}
+                          {metrics[0]?.pathLength != null ? metrics[0].pathLength : "-"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[1]?.pathLength != null ? metrics[1].pathLength : "—"}
+                          {metrics[1]?.pathLength != null ? metrics[1].pathLength : "-"}
                         </TableCell>
                       </TableRow>
                       <TableRow className="border-zinc-800">
                         <TableCell className="text-zinc-300">Time (ms)</TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[0]?.executionTimeMs != null ? metrics[0].executionTimeMs.toFixed(2) : "—"}
+                          {metrics[0]?.executionTimeMs != null ? metrics[0].executionTimeMs.toFixed(2) : "-"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums text-zinc-400">
-                          {metrics[1]?.executionTimeMs != null ? metrics[1].executionTimeMs.toFixed(2) : "—"}
+                          {metrics[1]?.executionTimeMs != null ? metrics[1].executionTimeMs.toFixed(2) : "-"}
                         </TableCell>
                       </TableRow>
                     </TableBody>
