@@ -20,7 +20,7 @@ export function applyLayout(
   g.setDefaultEdgeLabel(() => ({}));
 
   for (const node of nodes) {
-    g.setNode(node.id, { width: 48, height: 48 });
+    g.setNode(node.id, { width: 36, height: 36 });
   }
 
   for (const edge of edges) {
@@ -31,7 +31,7 @@ export function applyLayout(
 
   const layoutNodes = nodes.map((node) => {
     const pos = g.node(node.id);
-    return { ...node, x: pos.x - 24, y: pos.y - 24 };
+    return { ...node, x: pos.x - 18, y: pos.y - 18 };
   });
 
   return { nodes: layoutNodes, edges };

@@ -66,13 +66,13 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
         className={`
           flex items-center justify-center
           rounded-full
-          w-10 h-10
+          w-9 h-9
           border-2 ${highlightBorder || styles.border} ${styles.bg} ${styles.text}
-          font-mono font-bold text-sm
+          font-mono font-bold text-xs
           shadow-lg shadow-black/30
           transition-all duration-200 ease-out
           ${animClass}
-          group-hover:scale-[1.2] group-hover:shadow-sky-400/20 group-hover:shadow-xl
+          group-hover:scale-[1.08] group-hover:shadow-sky-400/20 group-hover:shadow-xl
           group-hover:${styles.border}
         `}
       >
@@ -81,11 +81,11 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
       {distance !== undefined && (
         <span
           className={`
-            absolute top-5.5 left-8 -translate-x-1/2 mt-1
+            absolute top-5 left-7 -translate-x-1/2 mt-1
             text-[8px] font-mono font-bold px-1 py-0.3 rounded border-2 whitespace-nowrap
             transition-all duration-200 ease-out
             ${styles.bg} ${styles.border} ${styles.text}
-            group-hover:scale-[1.1] group-hover:shadow-sky-400/20 group-hover:shadow-lg
+            group-hover:scale-[1.05] group-hover:shadow-sky-400/20 group-hover:shadow-lg
             group-hover:${styles.border} group-hover:${styles.text}
           `}
           title={distanceLabel === "exitIndex" ? "Exit index" : "Shortest distance"}
